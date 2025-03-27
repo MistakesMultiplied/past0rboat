@@ -13,6 +13,7 @@ void CAutoVote::UserMessage(bf_read& msgData)
 	const int iTarget = msgData.ReadByte() >> 1;
 	msgData.Seek(0);
 
+
 	PlayerInfo_t pi{};
 	if (I::EngineClient->GetPlayerInfo(iTarget, &pi))
 	{
@@ -22,6 +23,8 @@ void CAutoVote::UserMessage(bf_read& msgData)
 			return;
 		}
 	}
+
+
 	PlayerInfo_t callerPi{};
 	if (I::EngineClient->GetPlayerInfo(iTarget, &callerPi))
 	{
@@ -32,17 +35,25 @@ void CAutoVote::UserMessage(bf_read& msgData)
 		}
 	}
 
+
 	if (Vars::Misc::Automation::AutoF2Ignored.Value
 		&& (F::PlayerUtils.IsIgnored(iTarget)
 		|| Vars::Aimbot::General::Ignore.Value & Vars::Aimbot::General::IgnoreEnum::Friends && H::Entities.IsFriend(iTarget)
 		|| Vars::Aimbot::General::Ignore.Value & Vars::Aimbot::General::IgnoreEnum::Party && H::Entities.InParty(iTarget)))
 	{
 		I::ClientState->SendStringCmd(std::format("vote {} option2", iVoteID).c_str());
+		return;
 	}
-	else if (Vars::Misc::Automation::AutoF1Priority.Value && F::PlayerUtils.IsPrioritized(iTarget)
+
+
+	if (Vars::Misc::Automation::AutoF1Priority.Value && F::PlayerUtils.IsPrioritized(iTarget)
 		&& !H::Entities.IsFriend(iTarget)
 		&& !H::Entities.InParty(iTarget))
 	{
 		I::ClientState->SendStringCmd(std::format("vote {} option1", iVoteID).c_str());
+		return;
 	}
+
+
+	I::ClientState->SendStringCmd(std::format("vote {} option1", iVoteID).c_str());
 }

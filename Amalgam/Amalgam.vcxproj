@@ -304,21 +304,21 @@
     <OutDir>$(SolutionDir)output\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugFreetype|x64'">
-    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
+    <IncludePath>$(ProjectDir)include\;$(SolutionDir)boost_1_86_0;$(IncludePath)</IncludePath>
     <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(ProjectDir)include\;$(IncludePath)</IncludePath>
+    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
     <OutDir>$(SolutionDir)output\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugAVX2|x64'">
-    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
+    <IncludePath>$(ProjectDir)include\;$(SolutionDir)boost_1_86_0;$(IncludePath)</IncludePath>
     <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(ProjectDir)include\;$(IncludePath)</IncludePath>
+    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
     <OutDir>$(SolutionDir)output\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugFreetypeAVX2|x64'">
-    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
+    <IncludePath>$(ProjectDir)include\;$(SolutionDir)boost_1_86_0;$(IncludePath)</IncludePath>
     <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(ProjectDir)include\;$(IncludePath)</IncludePath>
+    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
     <OutDir>$(SolutionDir)output\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -328,7 +328,7 @@
     <OutDir>$(SolutionDir)output\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTextmode|x64'">
-    <IncludePath>$(ProjectDir)include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include\;$(SolutionDir)boost_1_86_0;$(IncludePath)</IncludePath>
     <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
     <OutDir>$(SolutionDir)output\$(Platform)\$(Configuration)\</OutDir>
@@ -346,7 +346,7 @@
     <OutDir>$(SolutionDir)output\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTextmodeAVX2|x64'">
-    <IncludePath>$(ProjectDir)include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include\;$(SolutionDir)boost_1_86_0;$(IncludePath)</IncludePath>
     <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
     <OutDir>$(SolutionDir)output\$(Platform)\$(Configuration)\</OutDir>
