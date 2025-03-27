@@ -3,6 +3,12 @@
 #include "../../Core/Core.h"
 #include "../ImGui/Menu/Menu.h"
 #include "../NavBot/NavEngine/NavEngine.h"
+#include "../Configs/Configs.h"
+#include "../Misc/Misc.h"
+#include "../../SDK/Definitions/Steam/ISteamClient.h"
+#include "../../SDK/Definitions/Steam/ISteamUser.h"
+#include "../../SDK/Definitions/Steam/ISteamMatchmaking.h"
+#include "../../SDK/Definitions/Steam/SteamClientPublic.h"
 #include <utility>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/join.hpp>
@@ -157,10 +163,62 @@ void CCommands::Initialize()
 				pNavFile->Write( );
 		});
 
-	Register("unload", [](const std::deque<std::string>& args)
+	Register("load", [](const std::deque<std::string>& args)
+		{
+			if (args.size() != 1)
+			{
+				SDK::Output("Usage:\n\tload <config_name>");
+				return;
+			}
+
+			F::Configs.LoadConfig(args[0], true);
+		});
+
+	Register("detach", [](const std::deque<std::string>& args)
 		{
 			if (F::Menu.m_bIsOpen)
 				I::MatSystemSurface->SetCursorAlwaysVisible(F::Menu.m_bIsOpen = false);
 			U::Core.m_bUnload = true;
+		});
+
+	Register("achievements_unlock_all", [](const std::deque<std::string>& args)
+		{
+			F::Misc.UnlockAchievements();
+			SDK::Output("Unlocked all achievements");
+		});
+
+	Register("achievements_lock_all", [](const std::deque<std::string>& args)
+		{
+			F::Misc.LockAchievements();
+			SDK::Output("Locked all achievements");
+		});
+
+	Register("disconnect_and_abandon", [](const std::deque<std::string>& args)
+		{
+			auto pGameRules = I::TFGameRules();
+			if (pGameRules)
+			{
+				auto pMatchGroupDesc = pGameRules->GetMatchGroupDescription();
+				if (pMatchGroupDesc && pMatchGroupDesc->m_bUsesStrictAbandons)
+				{
+					HSteamPipe hSteamPipe = I::SteamClient->CreateSteamPipe();
+					HSteamUser hSteamUser = I::SteamUser->GetHSteamUser();
+					if (auto pGameSearch = I::SteamClient->GetISteamGameSearch(hSteamUser, hSteamPipe, STEAMGAMESEARCH_INTERFACE_VERSION))
+					{
+						PlayerInfo_t pi{};
+						if (I::EngineClient->GetPlayerInfo(I::EngineClient->GetLocalPlayer(), &pi))
+						{
+							CSteamID cSteamID = { pi.friendsID, 1, k_EUniversePublic, k_EAccountTypeIndividual };
+							if (cSteamID.IsValid())
+							{
+								pGameSearch->SubmitPlayerResult(0, cSteamID, k_EPlayerResultAbandoned);
+							}
+						}
+					}
+					I::SteamClient->BReleaseSteamPipe(hSteamPipe);
+				}
+			}
+			I::EngineClient->ClientCmd_Unrestricted("disconnect");
+			SDK::Output("Disconnected and abandoned match");
 		});
 }
