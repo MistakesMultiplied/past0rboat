@@ -59,8 +59,6 @@ int CFlagController::GetCarrier(int iTeam)
 	if (tFlag.m_pFlag)
 		return GetCarrier(tFlag.m_pFlag);
 
-	SDK::Output("CFlagController", std::format("GetCarrier: No flag entity").c_str(), { 255, 131, 131, 255 }, Vars::Debug::Logging.Value);
-
 	return -1;
 }
 

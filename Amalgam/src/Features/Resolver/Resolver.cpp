@@ -3,7 +3,7 @@
 #include "../Backtrack/Backtrack.h"
 #include "../Players/PlayerUtils.h"
 #include "../TickHandler/TickHandler.h"
-#include "../Records/Records.h"
+#include "../Output/Output.h"
 
 void CResolver::Reset()
 {
@@ -93,24 +93,20 @@ void CResolver::CreateMove(CTFPlayer* pLocal)
 
 			if (bAutoYaw)
 			{
-				flYaw += Vars::AntiHack::Resolver::AutoResolveYawAmount.Value;
-				flYaw = fmodf(flYaw + 180.f, 360.f);
-				flYaw += flYaw < 0 ? 180.f : -180.f;
+				flYaw = Math::NormalizeAngle(flYaw + Vars::AntiHack::Resolver::AutoResolveYawAmount.Value);
 
 				F::Backtrack.ResolverUpdate(pTarget);
-				F::Records.ReportResolver(I::EngineClient->GetPlayerForUserID(m_iWaitingForTarget), "Cycling", "yaw", flYaw);
+				F::Output.ReportResolver(I::EngineClient->GetPlayerForUserID(m_iWaitingForTarget), "Cycling", "yaw", flYaw);
 			}
 
 			if (bAutoPitch
 				&& (!bAutoYaw || fabsf(flYaw) < fabsf(Vars::AntiHack::Resolver::AutoResolveYawAmount.Value / 2))
 				&& fabsf(pTarget->m_angEyeAnglesX()) == 90.f && !m_mSniperDots.contains(m_iWaitingForTarget))
 			{
-				flPitch += tData.m_bAutoSetPitch && Vars::AntiHack::Resolver::AutoResolvePitchAmount.Value;
-				flPitch = fmodf(flPitch + 90.f, 180.f);
-				flPitch += flPitch < 0 ? 90.f : -90.f;
+				flPitch = Math::NormalizeAngle(flPitch + Vars::AntiHack::Resolver::AutoResolvePitchAmount.Value, 180.f);
 
 				F::Backtrack.ResolverUpdate(pTarget);
-				F::Records.ReportResolver(I::EngineClient->GetPlayerForUserID(m_iWaitingForTarget), "Cycling", "pitch", flPitch);
+				F::Output.ReportResolver(I::EngineClient->GetPlayerForUserID(m_iWaitingForTarget), "Cycling", "pitch", flPitch);
 			}
 
 			m_iWaitingForTarget = -1;
@@ -160,13 +156,10 @@ void CResolver::CreateMove(CTFPlayer* pLocal)
 				auto& tData = m_mResolverData[iUserID];
 
 				float& flYaw = tData.m_flYaw;
-
-				flYaw += Vars::AntiHack::Resolver::CycleYaw.Value;
-				flYaw = fmodf(flYaw + 180.f, 360.f);
-				flYaw += flYaw < 0 ? 180.f : -180.f;
+				flYaw = Math::NormalizeAngle(flYaw + Vars::AntiHack::Resolver::CycleYaw.Value);
 
 				F::Backtrack.ResolverUpdate(pTarget);
-				F::Records.ReportResolver(pTarget->entindex(), "Cycling", "yaw", flYaw);
+				F::Output.ReportResolver(pTarget->entindex(), "Cycling", "yaw", flYaw);
 			}
 
 			m_flLastYawCycle = SDK::PlatFloatTime();
@@ -183,13 +176,11 @@ void CResolver::CreateMove(CTFPlayer* pLocal)
 				int iUserID = pResource->GetUserID(pTarget->entindex());
 				auto& tData = m_mResolverData[iUserID];
 				if (fabsf(pTarget->m_angEyeAnglesX()) != 90.f)
-					F::Records.ReportResolver("Target not using out of bounds pitch");
+					F::Output.ReportResolver("Target not using out of bounds pitch");
 				float& flPitch = tData.m_flPitch;
-				flPitch += Vars::AntiHack::Resolver::CyclePitch.Value;
-				flPitch = fmodf(flPitch + 90.f, 180.f);
-				flPitch += flPitch < 0 ? 90.f : -90.f;
+				flPitch = Math::NormalizeAngle(flPitch + Vars::AntiHack::Resolver::CyclePitch.Value, 180.f);
 				F::Backtrack.ResolverUpdate(pTarget);
-				F::Records.ReportResolver(pTarget->entindex(), "Cycling", "pitch", flPitch);
+				F::Output.ReportResolver(pTarget->entindex(), "Cycling", "pitch", flPitch);
 			}
 			m_flLastPitchCycle = SDK::PlatFloatTime();
 		}
@@ -210,7 +201,7 @@ void CResolver::CreateMove(CTFPlayer* pLocal)
 				bMinwalk = !bMinwalk;
 
 				F::Backtrack.ResolverUpdate(pTarget);
-				F::Records.ReportResolver(pTarget->entindex(), "Cycling", "minwalk", bMinwalk);
+				F::Output.ReportResolver(pTarget->entindex(), "Cycling", "minwalk", bMinwalk);
 			}
 
 			m_flLastMinwalkCycle = SDK::PlatFloatTime();
@@ -230,7 +221,7 @@ void CResolver::CreateMove(CTFPlayer* pLocal)
 				bool& bView = tData.m_bView;
 				bView = !bView;
 				F::Backtrack.ResolverUpdate(pTarget);
-				F::Records.ReportResolver(pTarget->entindex(), "Cycling", "view", std::string(bView ? "view to local" : "static"));
+				F::Output.ReportResolver(pTarget->entindex(), "Cycling", "view", std::string(bView ? "view to local" : "static"));
 			}
 			m_flLastViewCycle = SDK::PlatFloatTime();
 		}
@@ -292,13 +283,13 @@ void CResolver::SetYaw(int iUserID, float flValue, bool bAuto)
 	if (bAuto)
 	{
 		tData.m_bAutoSetYaw = true;
-		F::Records.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "yaw", "auto");
+		F::Output.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "yaw", "auto");
 	}
 	else
 	{
 		tData.m_flYaw = flValue;
 		tData.m_bAutoSetYaw = false;
-		F::Records.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "yaw", flValue);
+		F::Output.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "yaw", flValue);
 	}
 	F::Backtrack.ResolverUpdate(I::ClientEntityList->GetClientEntity(I::EngineClient->GetPlayerForUserID(iUserID))->As<CTFPlayer>());
 }
@@ -311,26 +302,26 @@ void CResolver::SetPitch(int iUserID, float flValue, bool bInverse, bool bAuto)
 		tData.m_bInversePitch = false;
 		tData.m_bAutoSetPitch = true;
 
-		F::Records.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "pitch", "auto");
+		F::Output.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "pitch", "auto");
 	}
 	else if (bInverse)
 	{
 		tData.m_bInversePitch = true;
 		tData.m_bAutoSetPitch = false;
 
-		F::Records.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "pitch", "inverse");
+		F::Output.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "pitch", "inverse");
 	}
 	else
 	{
 		auto pPlayer = I::ClientEntityList->GetClientEntity(I::EngineClient->GetPlayerForUserID(iUserID))->As<CTFPlayer>();
 		if (pPlayer && fabsf(pPlayer->m_angEyeAnglesX()) != 90.f)
-			F::Records.ReportResolver("Target not using out of bounds pitch");
+			F::Output.ReportResolver("Target not using out of bounds pitch");
 
 		tData.m_flPitch = flValue;
 		tData.m_bInversePitch = false;
 		tData.m_bAutoSetPitch = false;
 
-		F::Records.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "pitch", flValue);
+		F::Output.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "pitch", flValue);
 	}
 
 	F::Backtrack.ResolverUpdate(I::ClientEntityList->GetClientEntity(I::EngineClient->GetPlayerForUserID(iUserID))->As<CTFPlayer>());
@@ -342,7 +333,7 @@ void CResolver::SetMinwalk(int iUserID, bool bValue)
 
 	tData.m_bMinwalk = bValue;
 	F::Backtrack.ResolverUpdate(I::ClientEntityList->GetClientEntity(I::EngineClient->GetPlayerForUserID(iUserID))->As<CTFPlayer>());
-	F::Records.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "minwalk", bValue);
+	F::Output.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "minwalk", bValue);
 }
 
 void CResolver::SetView(int iUserID, bool bValue)
@@ -350,7 +341,7 @@ void CResolver::SetView(int iUserID, bool bValue)
 	auto& tData = m_mResolverData[iUserID];
 	tData.m_bView = bValue;
 	F::Backtrack.ResolverUpdate(I::ClientEntityList->GetClientEntity(I::EngineClient->GetPlayerForUserID(iUserID))->As<CTFPlayer>());
-	F::Records.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "view", std::string(bValue ? "view to local" : "static"));
+	F::Output.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "view", std::string(bValue ? "view to local" : "static"));
 }
 
 bool CResolver::GetAngles(CTFPlayer* pPlayer, float* pYaw, float* pPitch, bool* pMinwalk, bool bFake)

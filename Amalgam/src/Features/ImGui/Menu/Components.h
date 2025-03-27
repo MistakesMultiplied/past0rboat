@@ -33,7 +33,8 @@ enum FText_
 {
 	FText_None = 0,
 	FText_Middle = 1 << 0,
-	FText_Right = 1 << 1
+	FText_Right = 1 << 1,
+	FText_SameLine = 1 << 2
 };
 
 enum FButton_
@@ -235,7 +236,7 @@ namespace ImGui
 		PopStyleColor();
 		SetCursorPos(vOriginalPos);
 		*/
-		
+
 		Dummy(vSize);
 	}
 	inline void DebugShift(ImVec2 vSize)
@@ -384,6 +385,8 @@ namespace ImGui
 		if (pFont)
 			PushFont(pFont);
 
+		if (iFlags & FText_SameLine)
+			SameLine();
 		if (iFlags & (FText_Middle | FText_Right))
 		{
 			float flWindowWidth = GetWindowWidth();
@@ -430,7 +433,7 @@ namespace ImGui
 		return sTruncated;
 	}
 
-	inline std::vector<std::string> WrapText(std::string sText, int iPixels, ImFont* pFont = nullptr)
+	inline std::deque<std::string> WrapText(std::string sText, int iPixels, ImFont* pFont = nullptr)
 	{
 		if (sText.empty())
 			return { "" };
@@ -446,7 +449,7 @@ namespace ImGui
 				vWords.back().push_back(iChar);
 		}
 
-		std::vector<std::string> vWrapped = { "" };
+		std::deque<std::string> vWrapped = { "" };
 		int iWord = 0;
 		for (auto& sWord : vWords)
 		{
@@ -582,7 +585,12 @@ namespace ImGui
 		PushStyleVar(ImGuiStyleVar_CellPadding, { 0, 0 });
 		const bool bReturn = BeginChild(sLabel, { GetColumnWidth(), flMinHeight }, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_AlwaysUseWindowPadding);
 		if (bReturn)
-			RenderTwoToneBackground(H::Draw.Scale(28), F::Render.Background0, F::Render.Background0p5, F::Render.Background2);
+		{
+			if (sLabel[0] != '#')
+				RenderTwoToneBackground(H::Draw.Scale(28), F::Render.Background0, F::Render.Background0p5, F::Render.Background2);
+			else
+				RenderBackground(F::Render.Background0p5, F::Render.Background2);
+		}
 
 		PushStyleVar(ImGuiStyleVar_ItemSpacing, { H::Draw.Scale(8), 0 });
 		if (sLabel[0] != '#')
@@ -1297,6 +1305,8 @@ namespace ImGui
 		if (Transparent || Disabled)
 			PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
 
+		bool bTitle = sLabel[0] != '#';
+
 		if (vValues.empty())
 		{
 			int i = 0; for (auto& sEntry : vEntries)
@@ -1310,11 +1320,9 @@ namespace ImGui
 		}
 
 		std::string sPreview = "";
-		if (iFlags & FDropdown_Multi && !*pVar)
-			sPreview = "None";
-		else
+		if (!(iFlags & FDropdown_Multi) || *pVar)
 		{
-			int i = 0; for (auto& iValue : vValues)
+			size_t i = 0; for (auto& iValue : vValues)
 			{
 				while (FNV1A::Hash32(vEntries[i]) == FNV1A::Hash32Const("##Divider"))
 					i++;
@@ -1325,27 +1333,32 @@ namespace ImGui
 					sPreview = std::format("{}##", StripDoubleHash(vEntries[i]).c_str());
 				i++;
 			}
-			sPreview.pop_back(); sPreview.pop_back();
+			if (sPreview.length() > 1)
+			{
+				sPreview.pop_back(); sPreview.pop_back();
+			}
 		}
+		if (sPreview.empty())
+			sPreview = "None";
 
-		PushStyleVar(ImGuiStyleVar_FramePadding, { 0.f, H::Draw.Scale(13.5f) });
-		float flSizeX = GetWindowWidth();
+		PushStyleVar(ImGuiStyleVar_FramePadding, { 0.f, H::Draw.Scale(bTitle ? 13.5f : 5.5f) });
+		ImVec2 vSize = { GetWindowWidth(), H::Draw.Scale(bTitle ? 40 : 24) };
 		if (iFlags & (FDropdown_Left | FDropdown_Right))
-			flSizeX = flSizeX / 2 - GetStyle().WindowPadding.x * 1.5f;
+			vSize.x = vSize.x / 2 - GetStyle().WindowPadding.x * 1.5f;
 		else
-			flSizeX -= GetStyle().WindowPadding.x * 2.f;
+			vSize.x -= GetStyle().WindowPadding.x * 2.f;
 		if (iFlags & FDropdown_Right)
-			SameLine(flSizeX + GetStyle().WindowPadding.x * 2.f);
+			SameLine(vSize.x + GetStyle().WindowPadding.x * 2.f);
 		iSizeOffset = strstr(sLabel, "## Bind") ? 0 : H::Draw.Scale(iSizeOffset, Scale_Round);
-		flSizeX += iSizeOffset;
-		PushItemWidth(flSizeX);
+		vSize.x += iSizeOffset;
+		PushItemWidth(vSize.x);
 
 		ImVec2 vOriginalPos = GetCursorPos();
 		DebugShift({ 0, H::Draw.Scale(8) });
 
 		if (Disabled)
 		{	// lol
-			Button("##", { flSizeX, H::Draw.Scale(40) });
+			Button("##", vSize);
 			SetCursorPos(vOriginalPos);
 			DebugShift({ 0, H::Draw.Scale(8) });
 		}
@@ -1373,7 +1386,7 @@ namespace ImGui
 					bool bFlagActive = *pVar & vValues[i];
 
 					ImVec2 vOriginalPos2 = GetCursorPos();
-					if (FSelectable(std::format("##{}", sEntry).c_str(), nullptr, 0, bFlagActive, ImGuiSelectableFlags_DontClosePopups))
+					if (FSelectable(std::format("##{}{}", sEntry, i).c_str(), nullptr, 0, bFlagActive, ImGuiSelectableFlags_DontClosePopups))
 					{
 						if (bFlagActive)
 							*pVar &= ~vValues[i];
@@ -1403,7 +1416,7 @@ namespace ImGui
 						SetCursorPos(vOriginalPos2);
 					}
 
-					if (FSelectable(std::format("##{}", sEntry).c_str(), nullptr, 0, *pVar == vValues[i]))
+					if (FSelectable(std::format("##{}{}", sEntry, i).c_str(), nullptr, 0, *pVar == vValues[i]))
 						*pVar = vValues[i], bReturn = true;
 
 					ImVec2 vOriginalPos3 = GetCursorPos();
@@ -1433,25 +1446,36 @@ namespace ImGui
 		{
 			ImVec2 vOriginalPos2 = GetCursorPos();
 
-			SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y - H::Draw.Scale(6) });
-			PushFont(F::Render.FontSmall);
-			PushStyleColor(ImGuiCol_Text, F::Render.Inactive.Value);
-			TextUnformatted(TruncateText(StripDoubleHash(sLabel), flSizeX - H::Draw.Scale(45)).c_str());
-			PopStyleColor();
-			PopFont();
+			if (bTitle)
+			{
+				SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y - H::Draw.Scale(6) });
+				PushFont(F::Render.FontSmall);
+				PushStyleColor(ImGuiCol_Text, F::Render.Inactive.Value);
+				TextUnformatted(TruncateText(StripDoubleHash(sLabel), vSize.x - H::Draw.Scale(45)).c_str());
+				PopStyleColor();
+				PopFont();
 
-			SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y + H::Draw.Scale(8) });
-			TextUnformatted(TruncateText(sPreview, flSizeX - H::Draw.Scale(45)).c_str());
+				SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y + H::Draw.Scale(8) });
+				TextUnformatted(TruncateText(sPreview, vSize.x - H::Draw.Scale(45)).c_str());
 
-			SetCursorPos({ vOriginalPos2.x + flSizeX - H::Draw.Scale(24), vOriginalPos2.y - H::Draw.Scale(1) });
-			IconImage(bActive ? ICON_MD_KEYBOARD_ARROW_UP : ICON_MD_KEYBOARD_ARROW_DOWN);
+				SetCursorPos({ vOriginalPos2.x + vSize.x - H::Draw.Scale(24), vOriginalPos2.y - H::Draw.Scale(1) });
+				IconImage(bActive ? ICON_MD_KEYBOARD_ARROW_UP : ICON_MD_KEYBOARD_ARROW_DOWN);
+			}
+			else
+			{
+				SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y });
+				TextUnformatted(TruncateText(sPreview, vSize.x - H::Draw.Scale(45)).c_str());
+
+				SetCursorPos({ vOriginalPos2.x + vSize.x - H::Draw.Scale(24), vOriginalPos2.y - H::Draw.Scale(1) });
+				IconImage(bActive ? ICON_MD_KEYBOARD_ARROW_UP : ICON_MD_KEYBOARD_ARROW_DOWN);
+			}
 
 			EndComboPreview();
 		}
 
 		SetCursorPos(vOriginalPos);
-		AddRowSize(vOriginalPos.y, H::Draw.Scale(48));
-		DebugDummy({ flSizeX, GetRowSize() });
+		AddRowSize(vOriginalPos.y, vSize.y + GetStyle().WindowPadding.y);
+		DebugDummy({ vSize.x, GetRowSize() });
 
 		PopItemWidth();
 		PopStyleVar();
@@ -1462,7 +1486,7 @@ namespace ImGui
 		if (pHovered && IsWindowHovered())
 		{
 			vOriginalPos += GetDrawPos();
-			*pHovered = IsMouseWithin(vOriginalPos.x, vOriginalPos.y + H::Draw.Scale(8), flSizeX, H::Draw.Scale(40));
+			*pHovered = IsMouseWithin(vOriginalPos.x, vOriginalPos.y + H::Draw.Scale(8), vSize.x, vSize.y);
 		}
 
 		return bReturn;
@@ -1475,29 +1499,32 @@ namespace ImGui
 
 		if (Transparent || Disabled)
 			PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
-		PushStyleVar(ImGuiStyleVar_FramePadding, { 0.f, H::Draw.Scale(13.5f) });
+
+		bool bTitle = sLabel[0] != '#';
+
+		PushStyleVar(ImGuiStyleVar_FramePadding, { 0.f, H::Draw.Scale(bTitle ? 13.5f : 5.5f) });
 		if (vEntries.empty())
 		{
 			PushStyleColor(ImGuiCol_PopupBg, {});
 			PushStyleVar(ImGuiStyleVar_WindowPadding, { GetStyle().WindowPadding.x, 0 });
 		}
-		float flSizeX = GetWindowWidth();
+		ImVec2 vSize = { GetWindowWidth(), H::Draw.Scale(bTitle ? 40 : 24) };
 		if (iFlags & (FDropdown_Left | FDropdown_Right))
-			flSizeX = flSizeX / 2 - GetStyle().WindowPadding.x * 1.5f;
+			vSize.x = vSize.x / 2 - GetStyle().WindowPadding.x * 1.5f;
 		else
-			flSizeX -= GetStyle().WindowPadding.x * 2.f;
+			vSize.x -= GetStyle().WindowPadding.x * 2.f;
 		if (iFlags & FDropdown_Right)
-			SameLine(flSizeX + GetStyle().WindowPadding.x * 2.f);
+			SameLine(vSize.x + GetStyle().WindowPadding.x * 2.f);
 		iSizeOffset = strstr(sLabel, "## Bind") ? 0 : H::Draw.Scale(iSizeOffset, Scale_Round);
-		flSizeX += iSizeOffset;
-		PushItemWidth(flSizeX);
+		vSize.x += iSizeOffset;
+		PushItemWidth(vSize.x);
 
 		ImVec2 vOriginalPos = GetCursorPos();
 		DebugShift({ 0, H::Draw.Scale(8) });
 
 		if (Disabled)
 		{	// lol
-			Button("##", { flSizeX, H::Draw.Scale(40) });
+			Button("##", vSize);
 			SetCursorPos(vOriginalPos);
 			DebugShift({ 0, H::Draw.Scale(8) });
 		}
@@ -1555,8 +1582,9 @@ namespace ImGui
 				PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0, H::Draw.Scale(19) });
 
 				bool bDivider = false;
-				for (auto& sEntry : vValid)
+				for (int i = 0; i < vValid.size(); i++)
 				{
+					auto& sEntry = vValid[i];
 					if (FNV1A::Hash32(sEntry.c_str()) == FNV1A::Hash32Const("##Divider"))
 					{
 						if (!bDivider)
@@ -1591,7 +1619,7 @@ namespace ImGui
 
 					bool bActive = FNV1A::Hash32(pVar->c_str()) == FNV1A::Hash32(sEntry.c_str());
 					ImVec2 vOriginalPos3 = GetCursorPos();
-					if (FSelectable(std::format("##{}", sEntry).c_str(), nullptr, 0, bActive))
+					if (FSelectable(std::format("##{}{}", sEntry, i).c_str(), nullptr, 0, bActive))
 						*pVar = sEntry, bReturn = true;
 
 					ImVec2 vOriginalPos4 = GetCursorPos();
@@ -1621,44 +1649,48 @@ namespace ImGui
 		{
 			ImVec2 vOriginalPos2 = GetCursorPos();
 
-			SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y - H::Draw.Scale(5) });
-			PushFont(F::Render.FontSmall);
-			PushStyleColor(ImGuiCol_Text, F::Render.Inactive.Value);
-			TextUnformatted(TruncateText(StripDoubleHash(sLabel), flSizeX - H::Draw.Scale(vEntries.empty() ? 24 : 45)).c_str());
-			PopStyleColor();
-			PopFont();
-
-			SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y + H::Draw.Scale(8) });
-			// would like this to work properly, text looks nicer but overrides popup window
-			/*
-			if (mActiveMap[uHash])
+			if (bTitle)
 			{
-				PushStyleVar(ImGuiStyleVar_FramePadding, { 0, 0 });
-				PushStyleColor(ImGuiCol_FrameBg, {});
-				PushItemWidth(flSizeX - H::Draw.Scale(12));
-				if (!IsAnyItemActive()) // silly, but afaik no way to have a one time focus
-					SetKeyboardFocusHere();
-				enter = FInputText("##FSDropdown", &preview, ImGuiInputTextFlags_EnterReturnsTrue);
-				PopItemWidth();
+				SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y - H::Draw.Scale(5) });
+				PushFont(F::Render.FontSmall);
+				PushStyleColor(ImGuiCol_Text, F::Render.Inactive.Value);
+				TextUnformatted(TruncateText(StripDoubleHash(sLabel), vSize.x - H::Draw.Scale(vEntries.empty() ? 24 : 45)).c_str());
 				PopStyleColor();
-				PopStyleVar();
+				PopFont();
+
+				SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y + H::Draw.Scale(8) });
+				TextUnformatted(TruncateText(mActiveMap[uHash] ? sPreview : *pVar, vSize.x - H::Draw.Scale(vEntries.empty() ? 24 : 45)).c_str());
+
+				if (!vEntries.empty())
+				{
+					SetCursorPos({ vOriginalPos2.x + vSize.x - H::Draw.Scale(24), vOriginalPos2.y - H::Draw.Scale(1) });
+					IconImage(mActiveMap[uHash] ? ICON_MD_KEYBOARD_ARROW_UP : ICON_MD_KEYBOARD_ARROW_DOWN);
+				}
+
+				if (mActiveMap[uHash] || iFlags & FSDropdown_Custom || vEntries.empty())
+				{
+					ImVec2 vDrawPos = GetDrawPos() + vOriginalPos2 + ImVec2(H::Draw.Scale(12), H::Draw.Scale(22));
+					vDrawPos.x = floorf(vDrawPos.x), vDrawPos.y = floorf(vDrawPos.y);
+					GetWindowDrawList()->AddRectFilled({ vDrawPos.x, vDrawPos.y }, { vDrawPos.x + vSize.x - H::Draw.Scale(vEntries.empty() ? 25 : 45), vDrawPos.y + H::Draw.Scale(2) }, mActiveMap[uHash] ? F::Render.Active : F::Render.Inactive);
+				}
 			}
 			else
-				TextUnformatted(TruncateText(var, flSizeX - H::Draw.Scale(entries.empty() ? 24 : 45)).c_str());
-			*/
-			TextUnformatted(TruncateText(mActiveMap[uHash] ? sPreview : *pVar, flSizeX - H::Draw.Scale(vEntries.empty() ? 24 : 45)).c_str());
-
-			if (!vEntries.empty())
 			{
-				SetCursorPos({ vOriginalPos2.x + flSizeX - H::Draw.Scale(24), vOriginalPos2.y - H::Draw.Scale(1) });
-				IconImage(mActiveMap[uHash] ? ICON_MD_KEYBOARD_ARROW_UP : ICON_MD_KEYBOARD_ARROW_DOWN);
-			}
+				SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y });
+				TextUnformatted(TruncateText(mActiveMap[uHash] ? sPreview : *pVar, vSize.x - H::Draw.Scale(vEntries.empty() ? 24 : 45)).c_str());
 
-			if (mActiveMap[uHash] || iFlags & FSDropdown_Custom || vEntries.empty())
-			{
-				ImVec2 vDrawPos = GetDrawPos() + vOriginalPos2 + ImVec2(H::Draw.Scale(12), H::Draw.Scale(22));
-				vDrawPos.x = floorf(vDrawPos.x), vDrawPos.y = floorf(vDrawPos.y);
-				GetWindowDrawList()->AddRectFilled({ vDrawPos.x, vDrawPos.y }, { vDrawPos.x + flSizeX - H::Draw.Scale(vEntries.empty() ? 25 : 45), vDrawPos.y + H::Draw.Scale(2) }, mActiveMap[uHash] ? F::Render.Active : F::Render.Inactive);
+				if (!vEntries.empty())
+				{
+					SetCursorPos({ vOriginalPos2.x + vSize.x - H::Draw.Scale(24), vOriginalPos2.y - H::Draw.Scale(1) });
+					IconImage(mActiveMap[uHash] ? ICON_MD_KEYBOARD_ARROW_UP : ICON_MD_KEYBOARD_ARROW_DOWN);
+				}
+
+				if (mActiveMap[uHash] || iFlags & FSDropdown_Custom || vEntries.empty())
+				{
+					ImVec2 vDrawPos = GetDrawPos() + vOriginalPos2 + ImVec2(H::Draw.Scale(12), H::Draw.Scale(14));
+					vDrawPos.x = floorf(vDrawPos.x), vDrawPos.y = floorf(vDrawPos.y);
+					GetWindowDrawList()->AddRectFilled({ vDrawPos.x, vDrawPos.y }, { vDrawPos.x + vSize.x - H::Draw.Scale(vEntries.empty() ? 25 : 45), vDrawPos.y + H::Draw.Scale(2) }, mActiveMap[uHash] ? F::Render.Active : F::Render.Inactive);
+				}
 			}
 
 			EndComboPreview();
@@ -1672,8 +1704,8 @@ namespace ImGui
 		}
 
 		SetCursorPos(vOriginalPos);
-		AddRowSize(vOriginalPos.y, H::Draw.Scale(48));
-		DebugDummy({ flSizeX, GetRowSize() });
+		AddRowSize(vOriginalPos.y, vSize.y + GetStyle().WindowPadding.y);
+		DebugDummy({ vSize.x, GetRowSize() });
 
 		if (Transparent || Disabled)
 			PopStyleVar();
@@ -1681,7 +1713,7 @@ namespace ImGui
 		if (pHovered && IsWindowHovered())
 		{
 			vOriginalPos += GetDrawPos();
-			*pHovered = IsMouseWithin(vOriginalPos.x, vOriginalPos.y + H::Draw.Scale(8), flSizeX, H::Draw.Scale(40));
+			*pHovered = IsMouseWithin(vOriginalPos.x, vOriginalPos.y + H::Draw.Scale(8), vSize.x, vSize.y);
 		}
 
 		return bReturn;
@@ -1695,6 +1727,8 @@ namespace ImGui
 
 		if (Transparent || Disabled)
 			PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+
+		bool bTitle = sLabel[0] != '#';
 
 		std::unordered_map<std::string, std::vector<std::string>::iterator> mIts = {};
 		for (auto it = pVar->begin(); it != pVar->end(); it++)
@@ -1710,24 +1744,24 @@ namespace ImGui
 			sPreview.pop_back(); sPreview.pop_back();
 		}
 
-		PushStyleVar(ImGuiStyleVar_FramePadding, { 0.f, H::Draw.Scale(13.5f) });
-		float flSizeX = GetWindowWidth();
+		PushStyleVar(ImGuiStyleVar_FramePadding, { 0.f, H::Draw.Scale(bTitle ? 13.5f : 5.5f) });
+		ImVec2 vSize = { GetWindowWidth(), H::Draw.Scale(bTitle ? 40 : 24) };
 		if (iFlags & (FDropdown_Left | FDropdown_Right))
-			flSizeX = flSizeX / 2 - GetStyle().WindowPadding.x * 1.5f;
+			vSize.x = vSize.x / 2 - GetStyle().WindowPadding.x * 1.5f;
 		else
-			flSizeX -= GetStyle().WindowPadding.x * 2.f;
+			vSize.x -= GetStyle().WindowPadding.x * 2.f;
 		if (iFlags & FDropdown_Right)
-			SameLine(flSizeX + GetStyle().WindowPadding.x * 2.f);
+			SameLine(vSize.x + GetStyle().WindowPadding.x * 2.f);
 		iSizeOffset = strstr(sLabel, "## Bind") ? 0 : H::Draw.Scale(iSizeOffset, Scale_Round);
-		flSizeX += iSizeOffset;
-		PushItemWidth(flSizeX);
+		vSize.x += iSizeOffset;
+		PushItemWidth(vSize.x);
 
 		ImVec2 vOriginalPos = GetCursorPos();
 		DebugShift({ 0, H::Draw.Scale(8) });
 
 		if (Disabled)
 		{	// lol
-			Button("##", { flSizeX, H::Draw.Scale(40) });
+			Button("##", vSize);
 			SetCursorPos(vOriginalPos);
 			DebugShift({ 0, H::Draw.Scale(8) });
 		}
@@ -1739,8 +1773,9 @@ namespace ImGui
 
 			DebugDummy({ 0, H::Draw.Scale(8) });
 			PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0, H::Draw.Scale(19) });
-			for (auto& sEntry : vEntries)
+			for (int i = 0; i < vEntries.size(); i++)
 			{
+				auto& sEntry = vEntries[i];
 				if (FNV1A::Hash32(sEntry.c_str()) == FNV1A::Hash32Const("##Divider"))
 				{
 					ImVec2 vDrawPos = GetDrawPos(); float flPosY = GetCursorPosY();
@@ -1755,7 +1790,7 @@ namespace ImGui
 				int iEntry = bFlagActive ? std::distance(pVar->begin(), mIts[sEntry]) + 1 : 0;
 
 				ImVec2 vOriginalPos2 = GetCursorPos();
-				if (FSelectable(std::format("##{}", sEntry).c_str(), nullptr, 0, bFlagActive, ImGuiSelectableFlags_DontClosePopups))
+				if (FSelectable(std::format("##{}{}", sEntry, i).c_str(), nullptr, 0, bFlagActive, ImGuiSelectableFlags_DontClosePopups))
 				{
 					if (bFlagActive)
 						pVar->erase(cFind->second);
@@ -1791,23 +1826,34 @@ namespace ImGui
 		{
 			ImVec2 vOriginalPos2 = GetCursorPos();
 
-			SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y - H::Draw.Scale(5) });
-			PushFont(F::Render.FontSmall);
-			PushStyleColor(ImGuiCol_Text, F::Render.Inactive.Value);
-			TextUnformatted(TruncateText(StripDoubleHash(sLabel), flSizeX - H::Draw.Scale(45)).c_str());
-			PopStyleColor();
-			PopFont();
+			if (bTitle)
+			{
+				SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y - H::Draw.Scale(5) });
+				PushFont(F::Render.FontSmall);
+				PushStyleColor(ImGuiCol_Text, F::Render.Inactive.Value);
+				TextUnformatted(TruncateText(StripDoubleHash(sLabel), vSize.x - H::Draw.Scale(45)).c_str());
+				PopStyleColor();
+				PopFont();
 
-			SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y + H::Draw.Scale(8) });
-			TextUnformatted(TruncateText(sPreview, flSizeX - H::Draw.Scale(45)).c_str());
+				SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y + H::Draw.Scale(8) });
+				TextUnformatted(TruncateText(sPreview, vSize.x - H::Draw.Scale(45)).c_str());
 
-			SetCursorPos({ vOriginalPos2.x + flSizeX - H::Draw.Scale(24), vOriginalPos2.y - H::Draw.Scale(1) });
-			IconImage(bActive ? ICON_MD_KEYBOARD_ARROW_UP : ICON_MD_KEYBOARD_ARROW_DOWN, true);
+				SetCursorPos({ vOriginalPos2.x + vSize.x - H::Draw.Scale(24), vOriginalPos2.y - H::Draw.Scale(1) });
+				IconImage(bActive ? ICON_MD_KEYBOARD_ARROW_UP : ICON_MD_KEYBOARD_ARROW_DOWN);
+			}
+			else
+			{
+				SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y });
+				TextUnformatted(TruncateText(sPreview, vSize.x - H::Draw.Scale(45)).c_str());
+
+				SetCursorPos({ vOriginalPos2.x + vSize.x - H::Draw.Scale(24), vOriginalPos2.y - H::Draw.Scale(1) });
+				IconImage(bActive ? ICON_MD_KEYBOARD_ARROW_UP : ICON_MD_KEYBOARD_ARROW_DOWN);
+			}
 
 			EndComboPreview();
 		}
 		SetCursorPos(vOriginalPos);
-		AddRowSize(vOriginalPos.y, H::Draw.Scale(48));
+		AddRowSize(vOriginalPos.y, vSize.y + GetStyle().WindowPadding.y);
 		DebugDummy({ vSize.x, GetRowSize() });
 
 		PopItemWidth();
@@ -1819,17 +1865,16 @@ namespace ImGui
 		if (pHovered && IsWindowHovered())
 		{
 			vOriginalPos += GetDrawPos();
-			*pHovered = IsMouseWithin(vOriginalPos.x, vOriginalPos.y + H::Draw.Scale(8), flSizeX, H::Draw.Scale(40));
+			*pHovered = IsMouseWithin(vOriginalPos.x, vOriginalPos.y + H::Draw.Scale(8), vSize.x, vSize.y);
 		}
 
 		return bReturn;
 	}
 	*/
 
-	inline bool ColorPicker(const char* sLabel, Color_t* tColor, bool bTooltip = true, int iFlags = FColorPicker_None)
+	inline bool ColorPicker(const char* sLabel, Color_t* tColor, bool bTooltip = true, int iFlags = FColorPicker_None, ImVec2 vSize = { H::Draw.Scale(12), H::Draw.Scale(12) })
 	{
 		ImVec2 vOriginalPos = GetCursorPos();
-		ImVec2 vSize = iFlags & FColorPicker_Dropdown ? ImVec2(H::Draw.Scale(10), H::Draw.Scale(40)) : ImVec2(H::Draw.Scale(12), H::Draw.Scale(12));
 		if (Disabled)
 		{	// lol
 			Button("##", vSize);
@@ -1910,16 +1955,17 @@ namespace ImGui
 		}
 		else
 		{
-			vSize = { H::Draw.Scale(10), H::Draw.Scale(40) };
-
+			float flOriginalPosY = GetCursorPosY();
 			SameLine();
+			vSize = { H::Draw.Scale(10), flOriginalPosY - GetCursorPosY() - H::Draw.Scale(8) };
+
 			SetCursorPosX(GetCursorPosX() - H::Draw.Scale(8));
 			vOriginalPos = GetCursorPos();
 			SetCursorPosY(GetCursorPosY() + H::Draw.Scale(8));
 
-			bReturn = ColorPicker(sLabel, tColor, iFlags & FColorPicker_Tooltip, iFlags);
+			bReturn = ColorPicker(sLabel, tColor, iFlags & FColorPicker_Tooltip, iFlags, vSize);
 			SetCursorPos(vOriginalPos);
-			AddRowSize(vOriginalPos.y, H::Draw.Scale(48));
+			AddRowSize(vOriginalPos.y, vSize.y + GetStyle().WindowPadding.y);
 			DebugDummy({ vSize.x, GetRowSize() });
 
 			vOriginalPos.y += H::Draw.Scale(8);
@@ -2014,8 +2060,6 @@ namespace ImGui
 	}
 	inline void FKeybind(const char* sLabel, int& iOutput, int iFlags = FKeybind_None, ImVec2 vSize = { 0, 30 }, int iSizeOffset = 0, bool* pHovered = nullptr)
 	{
-		static bool bCanceled = false;
-
 		ImGuiID uId = GetID(sLabel);
 		PushID(sLabel);
 
@@ -2023,15 +2067,13 @@ namespace ImGui
 		{
 			F::Menu.m_bInKeybind = true;
 
-			//FButton("...", flags | FButton_NoUpper, sizeOffset);
-			FButton(std::format("{}: ...", sLabel).c_str(), iFlags | FButton_NoUpper, vSize, iSizeOffset);
-			bool bHovered = IsItemHovered();
+			bool bHovered = false;
+			FButton(std::format("{}: ...", sLabel).c_str(), iFlags | FButton_NoUpper, vSize, iSizeOffset, &bHovered);
+			if (pHovered)
+				*pHovered = bHovered;
 
-			if (bHovered && IsMouseClicked(ImGuiMouseButton_Left))
-			{
-				bCanceled = true;
+			if (bHovered && IsMouseReleased(ImGuiMouseButton_Left))
 				ClearActiveID();
-			}
 			else
 			{
 				SetActiveID(uId, GetCurrentWindow());
@@ -2046,13 +2088,10 @@ namespace ImGui
 					}
 				}
 
-				if (iKeyPressed)
+				if (iKeyPressed && (iKeyPressed != VK_LBUTTON || !bHovered))
 				{
 					switch (iKeyPressed)
 					{
-					case VK_LBUTTON:
-						iOutput = bHovered ? iOutput : iKeyPressed;
-						break;
 					case VK_ESCAPE:
 						if (iFlags & FKeybind_AllowNone)
 						{
@@ -2066,16 +2105,12 @@ namespace ImGui
 					}
 					ClearActiveID();
 				}
+
+				GetCurrentContext()->ActiveIdAllowOverlap = true;
 			}
-
-			GetCurrentContext()->ActiveIdAllowOverlap = true;
 		}
-		//else if (FButton(VK2STR(output).c_str(), flags | FButton_NoUpper) && !bCanceled)
-		else if (FButton(std::format("{}: {}", sLabel, VK2STR(iOutput)).c_str(), iFlags | FButton_NoUpper, vSize, iSizeOffset) && !bCanceled)
+		else if (FButton(std::format("{}: {}", sLabel, VK2STR(iOutput)).c_str(), iFlags | FButton_NoUpper, vSize, iSizeOffset, pHovered))
 			SetActiveID(uId, GetCurrentWindow());
-
-		if (bCanceled && !IsMouseDown(ImGuiMouseButton_Left) && !IsMouseReleased(ImGuiMouseButton_Left))
-			bCanceled = false;
 
 		PopID();
 	}
@@ -2112,6 +2147,8 @@ namespace ImGui
 		if (Transparent || Disabled)
 			PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
 
+		bool bTitle = sLabel[0] != '#';
+
 		std::unordered_map<std::string, std::vector<std::pair<std::string, Color_t>>::iterator> mIts = {};
 		for (auto it = pVar->begin(); it != pVar->end(); it++)
 			mIts[it->first] = it;
@@ -2126,24 +2163,24 @@ namespace ImGui
 			sPreview.pop_back(); sPreview.pop_back();
 		}
 
-		PushStyleVar(ImGuiStyleVar_FramePadding, { 0.f, H::Draw.Scale(13.5f) });
-		float flSizeX = GetWindowWidth();
+		PushStyleVar(ImGuiStyleVar_FramePadding, { 0.f, H::Draw.Scale(bTitle ? 13.5f : 5.5f) });
+		ImVec2 vSize = { GetWindowWidth(), H::Draw.Scale(bTitle ? 40 : 24) };
 		if (iFlags & (FDropdown_Left | FDropdown_Right))
-			flSizeX = flSizeX / 2 - GetStyle().WindowPadding.x * 1.5f;
+			vSize.x = vSize.x / 2 - GetStyle().WindowPadding.x * 1.5f;
 		else
-			flSizeX -= GetStyle().WindowPadding.x * 2.f;
+			vSize.x -= GetStyle().WindowPadding.x * 2.f;
 		if (iFlags & FDropdown_Right)
-			SameLine(flSizeX + GetStyle().WindowPadding.x * 2.f);
+			SameLine(vSize.x + GetStyle().WindowPadding.x * 2.f);
 		iSizeOffset = strstr(sLabel, "## Bind") ? 0 : H::Draw.Scale(iSizeOffset, Scale_Round);
-		flSizeX += iSizeOffset;
-		PushItemWidth(flSizeX);
+		vSize.x += iSizeOffset;
+		PushItemWidth(vSize.x);
 
 		ImVec2 vOriginalPos = GetCursorPos();
 		DebugShift({ 0, 8 });
 
 		if (Disabled)
 		{	// lol
-			Button("##", { flSizeX, 40 });
+			Button("##", vSize);
 			SetCursorPos(vOriginalPos);
 			DebugShift({ 0, 8 });
 		}
@@ -2155,8 +2192,9 @@ namespace ImGui
 
 			DebugDummy({ 0, 8 });
 			PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0, H::Draw.Scale(19) });
-			for (auto& sEntry : vEntries)
+			for (int i = 0; i < vEntries.size(); i++)
 			{
+				auto& sEntry = vEntries[i];
 				if (FNV1A::Hash32(sEntry.c_str()) == FNV1A::Hash32Const("##Divider"))
 				{
 					ImVec2 vDrawPos = GetDrawPos(); float flPosY = GetCursorPosY();
@@ -2173,13 +2211,13 @@ namespace ImGui
 				ImVec2 vOriginalPos2 = GetCursorPos();
 				if (bFlagActive) // do here so as to not sink input
 				{
-					SetCursorPos({ vOriginalPos2.x + flSizeX - H::Draw.Scale(31), vOriginalPos2.y + H::Draw.Scale(1) });
+					SetCursorPos({ vOriginalPos2.x + vSize.x - H::Draw.Scale(31), vOriginalPos2.y + H::Draw.Scale(1) });
 					ColorPicker(std::format("MaterialColor{}", iEntry).c_str(), &cFind->second->second, false);
 					SetCursorPos(vOriginalPos2);
 				}
 				bool bHovered = bFlagActive ? IsItemHovered() : false;
 
-				if (FSelectable(std::format("##{}", sEntry).c_str(), nullptr, 0, bFlagActive, ImGuiSelectableFlags_DontClosePopups))
+				if (FSelectable(std::format("##{}{}", sEntry, i).c_str(), nullptr, 0, bFlagActive, ImGuiSelectableFlags_DontClosePopups))
 				{
 					if (bFlagActive)
 						pVar->erase(cFind->second);
@@ -2193,7 +2231,7 @@ namespace ImGui
 				ImVec2 vOriginalPos3 = GetCursorPos();
 				SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(40 + 6 * int(log10(std::max(pVar->size(), 1ui64)))), vOriginalPos2.y + H::Draw.Scale(1) });
 				PushStyleColor(ImGuiCol_Text, bFlagActive ? F::Render.Active.Value : F::Render.Inactive.Value);
-				TextUnformatted(bHovered ? sEntry.c_str() : TruncateText(sEntry, flSizeX - (bFlagActive ? 82 : 60)).c_str());
+				TextUnformatted(bHovered ? sEntry.c_str() : TruncateText(sEntry, vSize.x - (bFlagActive ? 82 : 60)).c_str());
 				PopStyleColor();
 
 				if (bFlagActive)
@@ -2216,24 +2254,35 @@ namespace ImGui
 		{
 			ImVec2 vOriginalPos2 = GetCursorPos();
 
-			SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y - H::Draw.Scale(5) });
-			PushFont(F::Render.FontSmall);
-			PushStyleColor(ImGuiCol_Text, F::Render.Inactive.Value);
-			TextUnformatted(TruncateText(StripDoubleHash(sLabel), flSizeX - H::Draw.Scale(45)).c_str());
-			PopStyleColor();
-			PopFont();
+			if (bTitle)
+			{
+				SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y - H::Draw.Scale(5) });
+				PushFont(F::Render.FontSmall);
+				PushStyleColor(ImGuiCol_Text, F::Render.Inactive.Value);
+				TextUnformatted(TruncateText(StripDoubleHash(sLabel), vSize.x - H::Draw.Scale(45)).c_str());
+				PopStyleColor();
+				PopFont();
 
-			SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y + H::Draw.Scale(8) });
-			TextUnformatted(TruncateText(sPreview, flSizeX - H::Draw.Scale(45)).c_str());
+				SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y + H::Draw.Scale(8) });
+				TextUnformatted(TruncateText(sPreview, vSize.x - H::Draw.Scale(45)).c_str());
 
-			SetCursorPos({ vOriginalPos2.x + flSizeX - H::Draw.Scale(24), vOriginalPos2.y - H::Draw.Scale(1) });
-			IconImage(bActive ? ICON_MD_KEYBOARD_ARROW_UP : ICON_MD_KEYBOARD_ARROW_DOWN);
+				SetCursorPos({ vOriginalPos2.x + vSize.x - H::Draw.Scale(24), vOriginalPos2.y - H::Draw.Scale(1) });
+				IconImage(bActive ? ICON_MD_KEYBOARD_ARROW_UP : ICON_MD_KEYBOARD_ARROW_DOWN);
+			}
+			else
+			{
+				SetCursorPos({ vOriginalPos2.x + H::Draw.Scale(12), vOriginalPos2.y });
+				TextUnformatted(TruncateText(sPreview, vSize.x - H::Draw.Scale(45)).c_str());
+
+				SetCursorPos({ vOriginalPos2.x + vSize.x - H::Draw.Scale(24), vOriginalPos2.y - H::Draw.Scale(1) });
+				IconImage(bActive ? ICON_MD_KEYBOARD_ARROW_UP : ICON_MD_KEYBOARD_ARROW_DOWN);
+			}
 
 			EndComboPreview();
 		}
 		SetCursorPos(vOriginalPos);
-		AddRowSize(vOriginalPos.y, H::Draw.Scale(48));
-		DebugDummy({ flSizeX, GetRowSize() });
+		AddRowSize(vOriginalPos.y, vSize.y + GetStyle().WindowPadding.y);
+		DebugDummy({ vSize.x, GetRowSize() });
 
 		PopItemWidth();
 		PopStyleVar();
@@ -2244,7 +2293,7 @@ namespace ImGui
 		if (pHovered && IsWindowHovered())
 		{
 			vOriginalPos += GetDrawPos();
-			*pHovered = IsMouseWithin(vOriginalPos.x, vOriginalPos.y + H::Draw.Scale(8), flSizeX, H::Draw.Scale(40.f));
+			*pHovered = IsMouseWithin(vOriginalPos.x, vOriginalPos.y + H::Draw.Scale(8), vSize.x, vSize.y);
 		}
 
 		return bReturn;
@@ -2442,7 +2491,7 @@ namespace ImGui
 		}
 		bLastHovered = bLastHovered || bHovered;
 
-		if (tBind.m_iType == 0)
+		if (tBind.m_iType == BindEnum::Key)
 		{
 			FKeybind("Key", tBind.m_iKey, FKeybind_None, { 0, 30 }, 0, &bHovered);
 			bLastHovered = bLastHovered || bHovered;

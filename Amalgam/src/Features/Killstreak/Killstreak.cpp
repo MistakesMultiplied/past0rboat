@@ -19,14 +19,14 @@ void CKillstreak::ApplyKillstreak()
 			{
 				streaksResource[kTFStreak_Kills] = GetCurrentStreak();
 				streaksResource[kTFStreak_KillsAll] = GetCurrentStreak();
-				//streaksResource[ kTFStreak_Ducks ] = GetCurrentStreak( );
-				//streaksResource[ kTFStreak_Duck_levelup ] = GetCurrentStreak( );
+				//streaksResource[kTFStreak_Ducks] = GetCurrentStreak();
+				//streaksResource[kTFStreak_Duck_levelup] = GetCurrentStreak();
 			}
 
 			pLocal->m_nStreaks(kTFStreak_Kills) = GetCurrentStreak();
 			pLocal->m_nStreaks(kTFStreak_KillsAll) = GetCurrentStreak();
-			//pLocal->m_nStreaks( kTFStreak_Ducks ) = GetCurrentStreak( );
-			//pLocal->m_nStreaks( kTFStreak_Duck_levelup ) = GetCurrentStreak( );
+			//pLocal->m_nStreaks(kTFStreak_Ducks) = GetCurrentStreak();
+			//pLocal->m_nStreaks(kTFStreak_Duck_levelup) = GetCurrentStreak();
 		}
 	}
 }

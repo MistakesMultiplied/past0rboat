@@ -65,7 +65,12 @@ template <typename T> int sign(T val)
 
 namespace SDK
 {
-	void Output(const char* cFunction, const char* cLog = nullptr, Color_t cColor = { 255, 255, 255, 255 }, bool bConsole = true, bool bChat = false, bool bToast = false, bool bDebug = false, int iMessageBox = -1);
+	void Output(const char* cFunction, const char* cLog = nullptr, Color_t tColor = { 255, 255, 255, 255 },
+		bool bConsole = true, bool bDebug = false, bool bToast = false, bool bMenu = false, bool bChat = false, bool bParty = false, int iMessageBox = -1,
+		const char* sLeft = "[", const char* sRight = "]");
+
+	void SetClipboard(std::string sString);
+	std::string GetClipboard();
 
 	HWND GetTeamFortressWindow();
 	bool IsGameWindowInFocus();
@@ -105,12 +110,13 @@ namespace SDK
 	int IsAttacking(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, const CUserCmd* pCmd, bool bTickBase = false);
 	float MaxSpeed(CTFPlayer* pPlayer, bool bIncludeCrouch = false, bool bIgnoreSpecialAbility = false);
 
+	void FixMovement(CUserCmd* pCmd, const Vec3& vCurAngle, const Vec3& vTargetAngle);
 	void FixMovement(CUserCmd* pCmd, const Vec3& vTargetAngle);
 	bool StopMovement(CTFPlayer* pLocal, CUserCmd* pCmd);
 
-	Vec3 ComputeMove(const CUserCmd* pCmd, CTFPlayer* pLocal, Vec3& a, Vec3& b);
-	void WalkTo(CUserCmd* pCmd, CTFPlayer* pLocal, Vec3& a, Vec3& b, float scale);
-	void WalkTo(CUserCmd* pCmd, CTFPlayer* pLocal, Vec3 pDestination);
+	Vec3 ComputeMove(const CUserCmd* pCmd, CTFPlayer* pLocal, Vec3& vFrom, Vec3& vTo);
+	void WalkTo(CUserCmd* pCmd, CTFPlayer* pLocal, Vec3& vFrom, Vec3& vTo, float flScale = 1.f);
+	void WalkTo(CUserCmd* pCmd, CTFPlayer* pLocal, Vec3 vTo, float flScale = 1.f);
 
 	void GetProjectileFireSetup(CTFPlayer* pPlayer, const Vec3& vAngIn, Vec3 vOffset, Vec3& vPosOut, Vec3& vAngOut, bool bPipes = false, bool bInterp = false);
 	void GetProjectileFireSetupAirblast(CTFPlayer* pPlayer, const Vec3& vAngIn, Vec3 vPosIn, Vec3& vAngOut, bool bInterp = false);

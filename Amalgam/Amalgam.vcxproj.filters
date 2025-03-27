@@ -6,7 +6,7 @@
     <ClCompile Include="src\Features\Binds\Binds.cpp" />
     <ClCompile Include="src\Features\Configs\Configs.cpp" />
     <ClCompile Include="src\Features\ImGui\Menu\Menu.cpp" />
-    <ClCompile Include="src\Features\Records\Records.cpp" />
+    <ClCompile Include="src\Features\Output\Output.cpp" />
     <ClCompile Include="src\Features\Players\PlayerCore.cpp" />
     <ClCompile Include="src\Features\Players\PlayerUtils.cpp" />
     <ClCompile Include="src\Features\Visuals\Materials\Materials.cpp" />
@@ -208,6 +208,9 @@
     <ClCompile Include="include\ImGui\LanguageDefinitions.cpp" />
     <ClCompile Include="src\Hooks\CBaseEntity_BaseInterpolatePart1.cpp" />
     <ClCompile Include="src\Features\Misc\NamedPipe\NamedPipe.cpp" />
+    <ClCompile Include="src\Hooks\CParticleProperty_Create.cpp" />
+    <ClCompile Include="src\Hooks\IEngineVGui_Paint.cpp" />
+    <ClCompile Include="src\Hooks\CBuf_ExecuteCommand.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\UtlVector\UtlVector.h" />
@@ -222,7 +225,7 @@
     <ClInclude Include="src\Features\ImGui\MaterialDesign\MaterialIcons.h" />
     <ClInclude Include="src\Features\ImGui\Menu\Components.h" />
     <ClInclude Include="src\Features\ImGui\Menu\Menu.h" />
-    <ClInclude Include="src\Features\Records\Records.h" />
+    <ClInclude Include="src\Features\Output\Output.h" />
     <ClInclude Include="src\Features\Players\PlayerCore.h" />
     <ClInclude Include="src\Features\Players\PlayerUtils.h" />
     <ClInclude Include="src\Features\Visuals\Materials\Materials.h" />

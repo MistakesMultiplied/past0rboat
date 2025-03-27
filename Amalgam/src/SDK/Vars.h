@@ -146,7 +146,7 @@ namespace Vars
 
 		SUBNAMESPACE_BEGIN(Hitscan)
 			CVarEnum(Hitboxes, 0b000111, NONE, Head = 1 << 0, Body = 1 << 1, Pelvis = 1 << 2, Arms = 1 << 3, Legs = 1 << 4, BodyaimIfLethal = 1 << 5)
-			CVarEnum(Modifiers, 0b01000000, NONE, Tapfire = 1 << 0, WaitForHeadshot = 1 << 1, WaitForCharge = 1 << 2, ScopedOnly = 1 << 3, AutoScope = 1 << 4, AutoRev = 1 << 5, ExtinguishTeam = 1 << 6)
+			CVarEnum(Modifiers, 0b0100000, NONE, Tapfire = 1 << 0, WaitForHeadshot = 1 << 1, WaitForCharge = 1 << 2, ScopedOnly = 1 << 3, AutoScope = 1 << 4, AutoRev = 1 << 5, ExtinguishTeam = 1 << 6)
 			CVar(PointScale, 0.f)
 			CVar(TapFireDist, 1000.f)
 
@@ -330,7 +330,7 @@ namespace Vars
 		CVarEnum(Draw, 0b0, VISUAL, Players = 1 << 0, Buildings = 1 << 1, Projectiles = 1 << 2, Objective = 1 << 3, NPCs = 1 << 4, Health = 1 << 5, Ammo = 1 << 6, Money = 1 << 7, Powerups = 1 << 8, Bombs = 1 << 9, Spellbook = 1 << 10, Gargoyle = 1 << 11)
 		CVarEnum(Player, 0b0, VISUAL, Enemy = 1 << 0, Team = 1 << 1, Local = 1 << 2, Prioritized = 1 << 3, Friends = 1 << 4, Party = 1 << 5, Name = 1 << 6, Box = 1 << 7, Distance = 1 << 8, Bones = 1 << 9, HealthBar = 1 << 10, HealthText = 1 << 11, UberBar = 1 << 12, UberText = 1 << 13, ClassIcon = 1 << 14, ClassText = 1 << 15, WeaponIcon = 1 << 16, WeaponText = 1 << 17, Priority = 1 << 18, Labels = 1 << 19, Buffs = 1 << 20, Debuffs = 1 << 21, Misc = 1 << 22, LagCompensation = 1 << 23, Ping = 1 << 24, KDR = 1 << 25)
 		CVarEnum(Building, 0b0, VISUAL, Enemy = 1 << 0, Team = 1 << 1, Local = 1 << 2, Prioritized = 1 << 3, Friends = 1 << 4, Party = 1 << 5, Name = 1 << 6, Box = 1 << 7, Distance = 1 << 8, HealthBar = 1 << 9, HealthText = 1 << 10, Owner = 1 << 11, Level = 1 << 12, Flags = 1 << 13)
-		CVarEnum(Projectile, 0b0, VISUAL, Enemy = 1 << 0, Team = 1 << 1, Local = 1 << 2, Prioritized = 1 << 3, Friends = 1 << 4, Party = 1 << 5, Name = 1 << 6, Box = 1 << 7, Distance = 1 << 8, Flags = 1 << 9)
+		CVarEnum(Projectile, 0b0, VISUAL, Enemy = 1 << 0, Team = 1 << 1, Local = 1 << 2, Prioritized = 1 << 3, Friends = 1 << 4, Party = 1 << 5, Name = 1 << 6, Box = 1 << 7, Distance = 1 << 8, Owner = 1 << 9, Flags = 1 << 10)
 		CVarEnum(Objective, 0b0, VISUAL, Enemy = 1 << 0, Team = 1 << 1, Name = 1 << 2, Box = 1 << 3, Distance = 1 << 4, Flags = 1 << 5, IntelReturnTime = 1 << 6)
 
 		CVar(Dist2Alpha, true, VISUAL)
@@ -787,7 +787,8 @@ namespace Vars
 			CVar(SetupBonesOptimization, false)
 			CVar(F2PChatBypass, false)
 			CVar(VACBypass, false)
-			CVar(AntiCheatCompatibility, false, VISUAL)
+			CVar(AntiCheatCompatibility, false)
+			CVar(AntiCheatCritHack, false, DEBUGVAR)
 		SUBNAMESPACE_END(Game)
 
 		SUBNAMESPACE_BEGIN(Queueing)
@@ -917,39 +918,39 @@ namespace Vars
 
 	NAMESPACE_BEGIN(Logging)
 		CVarEnum(Logs, 0b0000011, NONE, VoteStart = 1 << 0, VoteCast = 1 << 1, ClassChanges = 1 << 2, Damage = 1 << 3, CheatDetection = 1 << 4, Tags = 1 << 5, Aliases = 1 << 6, Resolver = 1 << 7)
-		Enum(LogTo, Toasts = 1 << 0, Chat = 1 << 1, Party = 1 << 2, Console = 1 << 3)
+		Enum(LogTo, Toasts = 1 << 0, Chat = 1 << 1, Party = 1 << 2, Console = 1 << 3, Menu = 1 << 4, Debug = 1 << 5)
 		CVar(Lifetime, 5.f, VISUAL)
 
 		SUBNAMESPACE_BEGIN(VoteStart)
-			CVar(LogTo, 0b0001)
+			CVar(LogTo, 0b000001)
 		SUBNAMESPACE_END(VoteStart)
 
 		SUBNAMESPACE_BEGIN(VoteCast)
-			CVar(LogTo, 0b0001)
+			CVar(LogTo, 0b000001)
 		SUBNAMESPACE_END(VoteCast)
 
 		SUBNAMESPACE_BEGIN(ClassChange)
-			CVar(LogTo, 0b0001)
+			CVar(LogTo, 0b000001)
 		SUBNAMESPACE_END(ClassChange)
 
 		SUBNAMESPACE_BEGIN(Damage)
-			CVar(LogTo, 0b0001)
+			CVar(LogTo, 0b000001)
 		SUBNAMESPACE_END(Damage)
 
 		SUBNAMESPACE_BEGIN(CheatDetection)
-			CVar(LogTo, 0b0001)
+			CVar(LogTo, 0b000001)
 		SUBNAMESPACE_END(CheatDetection)
 
 		SUBNAMESPACE_BEGIN(Tags)
-			CVar(LogTo, 0b0001)
+			CVar(LogTo, 0b000001)
 		SUBNAMESPACE_END(Tags)
 
 		SUBNAMESPACE_BEGIN(Aliases)
-			CVar(LogTo, 0b0001)
+			CVar(LogTo, 0b000001)
 		SUBNAMESPACE_END(Aliases)
 
 		SUBNAMESPACE_BEGIN(Resolver)
-			CVar(LogTo, 0b0001)
+			CVar(LogTo, 0b000001)
 		SUBNAMESPACE_END(Resolver)
 	NAMESPACE_END(Logging)
 

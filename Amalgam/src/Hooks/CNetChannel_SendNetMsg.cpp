@@ -38,8 +38,8 @@ MAKE_HOOK(CNetChannel_SendNetMsg, S::CNetChannel_SendNetMsg(), bool,
 					} catch (...) {}; }
 					break;
 				case FNV1A::Hash32Const("cl_cmdrate"):
-					if (F::Misc.iWishCmdrate != -1)
-						strncpy_s(localCvar->Value, std::to_string(F::Misc.iWishCmdrate).c_str(), MAX_OSPATH);
+					if (F::Misc.m_iWishCmdrate != -1)
+						strncpy_s(localCvar->Value, std::to_string(F::Misc.m_iWishCmdrate).c_str(), MAX_OSPATH);
 					if (Vars::Misc::Game::AntiCheatCompatibility.Value)
 					{ try {
 						int iValue = std::stof(localCvar->Value);
@@ -49,7 +49,7 @@ MAKE_HOOK(CNetChannel_SendNetMsg, S::CNetChannel_SendNetMsg(), bool,
 				case FNV1A::Hash32Const("cl_interp_ratio"):
 				case FNV1A::Hash32Const("cl_interpolate"):
 					strncpy_s(localCvar->Value, "1", MAX_OSPATH);
-				//case FNV1A::Hash32Const("cl_updaterate"): strncpy_s(localCvar->Value, std::to_string(F::Misc.iWishUpdaterate).c_str(), MAX_OSPATH); break;
+				//case FNV1A::Hash32Const("cl_updaterate"): strncpy_s(localCvar->Value, std::to_string(F::Misc.m_iWishUpdaterate).c_str(), MAX_OSPATH); break;
 				}
 
 				/*
@@ -62,7 +62,7 @@ MAKE_HOOK(CNetChannel_SendNetMsg, S::CNetChannel_SendNetMsg(), bool,
 					case FNV1A::Hash32Const("cl_interpolate"):
 					case FNV1A::Hash32Const("cl_cmdrate"):
 					//case FNV1A::Hash32Const("cl_updaterate"):
-						SDK::Output("SendNetMsg", std::format("{}: {}", localCvar->Name, localCvar->Value).c_str(), { 100, 0, 255, 255 });
+						SDK::Output("SendNetMsg", std::format("{}: {}", localCvar->Name, localCvar->Value).c_str(), { 100, 0, 255 });
 					}
 				}
 				*/
@@ -103,8 +103,8 @@ MAKE_HOOK(CNetChannel_SendNetMsg, S::CNetChannel_SendNetMsg(), bool,
 					sValue = "1";
 					break;
 				case FNV1A::Hash32Const("cl_cmdrate"):
-					if (F::Misc.iWishCmdrate != -1)
-						sValue = std::to_string(F::Misc.iWishCmdrate);
+					if (F::Misc.m_iWishCmdrate != -1)
+						sValue = std::to_string(F::Misc.m_iWishCmdrate);
 					else
 						sValue = pConVar->GetString();
 					break;

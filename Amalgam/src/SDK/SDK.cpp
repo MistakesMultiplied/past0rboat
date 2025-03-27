@@ -2,6 +2,7 @@
 
 #include "../Features/EnginePrediction/EnginePrediction.h"
 #include "../Features/Visuals/Notifications/Notifications.h"
+#include "../Features/ImGui/Menu/Menu.h"
 #include <random>
 
 #pragma warning (disable : 6385)
@@ -23,38 +24,79 @@ static BOOL CALLBACK TeamFortressWindow(HWND hwnd, LPARAM lParam)
 
 
 
-void SDK::Output(const char* cFunction, const char* cLog, Color_t cColor, bool bConsole, bool bChat, bool bToast, bool bDebug, int iMessageBox)
+void SDK::Output(const char* cFunction, const char* cLog, Color_t tColor,
+	bool bConsole, bool bDebug, bool bToast, bool bMenu, bool bChat, bool bParty, int iMessageBox,
+	const char* sLeft, const char* sRight)
 {
 	if (cLog)
 	{
 		if (bConsole)
 		{
-			I::CVar->ConsoleColorPrintf(cColor, "[%s] ", cFunction);
+			I::CVar->ConsoleColorPrintf(tColor, "%s%s%s ", sLeft, cFunction, sRight);
 			I::CVar->ConsoleColorPrintf({}, "%s\n", cLog);
 		}
-		if (bChat)
-			I::ClientModeShared->m_pChatElement->ChatPrintf(0, std::format("{}[{}]\x1 {}", cColor.ToHex(), cFunction, cLog).c_str());
-		if (bToast)
-			F::Notifications.Add(std::format("[{}] {}", cFunction, cLog));
 		if (bDebug)
-			OutputDebugString(std::format("[{}] {}\n", cFunction, cLog).c_str());
+			OutputDebugString(std::format("{}{}{} {}\n", sLeft, cFunction, sRight, cLog).c_str());
+		if (bToast)
+			F::Notifications.Add(cLog, Vars::Logging::Lifetime.Value, 0.2f, tColor);
+		if (bMenu)
+			F::Menu.AddOutput(std::format("{}{}{}", sLeft, cFunction, sRight).c_str(), cLog, tColor);
+		if (bChat)
+			I::ClientModeShared->m_pChatElement->ChatPrintf(0, std::format("{}{}{}{}\x1 {}", tColor.ToHex(), sLeft, cFunction, sRight, cLog).c_str());
+		if (bParty)
+			I::TFPartyClient->SendPartyChat(cLog);
 		if (iMessageBox != -1)
 			MessageBox(nullptr, cLog, cFunction, iMessageBox);
 	}
 	else
 	{
 		if (bConsole)
-			I::CVar->ConsoleColorPrintf(cColor, "%s\n", cFunction);
-		if (bChat)
-			I::ClientModeShared->m_pChatElement->ChatPrintf(0, std::format("{}{}\x1", cColor.ToHex(), cFunction).c_str());
-		if (bToast)
-			F::Notifications.Add(std::format("{}", cFunction));
+			I::CVar->ConsoleColorPrintf(tColor, "%s\n", cFunction);
 		if (bDebug)
 			OutputDebugString(std::format("{}\n", cFunction).c_str());
+		if (bToast)
+			F::Notifications.Add(cFunction, Vars::Logging::Lifetime.Value, 0.2f, tColor);
+		if (bMenu)
+			F::Menu.AddOutput("", cFunction, tColor);
+		if (bChat)
+			I::ClientModeShared->m_pChatElement->ChatPrintf(0, std::format("{}{}\x1", tColor.ToHex(), cFunction).c_str());
+		if (bParty)
+			I::TFPartyClient->SendPartyChat(cFunction);
 		if (iMessageBox != -1)
 			MessageBox(nullptr, "", cFunction, iMessageBox);
 	}
 }
+
+#pragma warning (push)
+#pragma warning (disable : 4996)
+void SDK::SetClipboard(std::string sString)
+{
+	if (OpenClipboard(nullptr))
+	{
+		EmptyClipboard();
+
+		HGLOBAL clipbuffer = GlobalAlloc(GMEM_DDESHARE, sString.length() + 1);
+		char* buffer = (char*)GlobalLock(clipbuffer);
+		strncpy(buffer, sString.c_str(), sString.length());
+		GlobalUnlock(clipbuffer);
+		SetClipboardData(CF_TEXT, clipbuffer);
+
+		CloseClipboard();
+	}
+}
+
+std::string SDK::GetClipboard()
+{
+	std::string sString = "";
+	if (OpenClipboard(nullptr))
+	{
+		sString = (char*)GetClipboardData(CF_TEXT);
+
+		CloseClipboard();
+	}
+	return sString;
+}
+#pragma warning (pop)
 
 HWND SDK::GetTeamFortressWindow()
 {
@@ -579,18 +621,26 @@ float SDK::MaxSpeed(CTFPlayer* pPlayer, bool bIncludeCrouch, bool bIgnoreSpecial
 	return flSpeed;
 }
 
+void SDK::FixMovement(CUserCmd* pCmd, const Vec3& vCurAngle, const Vec3& vTargetAngle)
+{
+	bool bCurOOB = fabsf(Math::NormalizeAngle(vCurAngle.x)) > 90.f;
+	bool bTargetOOB = fabsf(Math::NormalizeAngle(vTargetAngle.x)) > 90.f;
+
+	Vec3 vMove = { pCmd->forwardmove, pCmd->sidemove * (bCurOOB ? -1 : 1), pCmd->upmove };
+	float flSpeed = vMove.Length2D();
+	Vec3 vMoveAng = {}; Math::VectorAngles(vMove, vMoveAng);
+
+	float flCurYaw = vCurAngle.y + (bCurOOB ? 180.f : 0.f);
+	float flTargetYaw = vTargetAngle.y + (bTargetOOB ? 180.f : 0.f);
+	float flYaw = DEG2RAD(flTargetYaw - flCurYaw + vMoveAng.y);
+
+	pCmd->forwardmove = cos(flYaw) * flSpeed;
+	pCmd->sidemove = sin(flYaw) * flSpeed * (bTargetOOB ? -1 : 1);
+}
+
 void SDK::FixMovement(CUserCmd* pCmd, const Vec3& vTargetAngle)
 {
-	const Vec3 vMove = { pCmd->forwardmove, pCmd->sidemove, pCmd->upmove };
-
-	Vec3 vMoveAng = {};
-	Math::VectorAngles(vMove, vMoveAng);
-
-	const float flSpeed = vMove.Length2D();
-	const float flYaw = DEG2RAD(vTargetAngle.y - pCmd->viewangles.y + vMoveAng.y);
-
-	pCmd->forwardmove = (cos(flYaw) * flSpeed);
-	pCmd->sidemove = (sin(flYaw) * flSpeed);
+	FixMovement(pCmd, pCmd->viewangles, vTargetAngle);
 }
 
 bool SDK::StopMovement(CTFPlayer* pLocal, CUserCmd* pCmd)
@@ -620,45 +670,38 @@ bool SDK::StopMovement(CTFPlayer* pLocal, CUserCmd* pCmd)
 	}
 }
 
-Vec3 SDK::ComputeMove(const CUserCmd* pCmd, CTFPlayer* pLocal, Vec3& a, Vec3& b)
+Vec3 SDK::ComputeMove(const CUserCmd* pCmd, CTFPlayer* pLocal, Vec3& vFrom, Vec3& vTo)
 {
-	const Vec3 diff = (b - a);
-	if (diff.Length() == 0.f)
-		return { 0.f, 0.f, 0.f };
+	const Vec3 vDiff = vTo - vFrom;
+	if (!vDiff.Length())
+		return {};
 
-	const float x = diff.x;
-	const float y = diff.y;
-	const Vec3 vSilent(x, y, 0);
-	Vec3 ang;
-	Math::VectorAngles(vSilent, ang);
-	const float yaw = DEG2RAD(ang.y - pCmd->viewangles.y);
-	const float pitch = DEG2RAD(ang.x - pCmd->viewangles.x);
-	Vec3 move = { cos(yaw) * 450.f, -sin(yaw) * 450.f, -cos(pitch) * 450.f };
+	Vec3 vSilent = { vDiff.x, vDiff.y, 0 };
+	Vec3 vAngle; Math::VectorAngles(vSilent, vAngle);
+	const float flYaw = DEG2RAD(vAngle.y - pCmd->viewangles.y);
+	const float flPitch = DEG2RAD(vAngle.x - pCmd->viewangles.x);
 
-	// Only apply upmove in water
-	if (!(I::EngineTrace->GetPointContents(pLocal->GetEyePosition()) & CONTENTS_WATER))
-		move.z = pCmd->upmove;
-	return move;
+	Vec3 vMove = { cos(flYaw) * 450.f, -sin(flYaw) * 450.f, -cos(flPitch) * 450.f };
+	if (!(I::EngineTrace->GetPointContents(pLocal->GetShootPos()) & CONTENTS_WATER)) // only apply upmove in water
+		vMove.z = pCmd->upmove;
+
+	return vMove;
 }
 
-void SDK::WalkTo(CUserCmd* pCmd, CTFPlayer* pLocal, Vec3& a, Vec3& b, float scale)
+void SDK::WalkTo(CUserCmd* pCmd, CTFPlayer* pLocal, Vec3& vFrom, Vec3& vTo, float flScale)
 {
-	// Calculate how to get to a vector
-	const auto result = ComputeMove(pCmd, pLocal, a, b);
+	const auto vResult = ComputeMove(pCmd, pLocal, vFrom, vTo);
 
-	// Push our move to usercmd
-	pCmd->forwardmove = result.x * scale;
-	pCmd->sidemove = result.y * scale;
-	pCmd->upmove = result.z * scale;
+	pCmd->forwardmove = vResult.x * flScale;
+	pCmd->sidemove = vResult.y * flScale;
+	pCmd->upmove = vResult.z * flScale;
 }
 
-void SDK::WalkTo(CUserCmd* pCmd, CTFPlayer* pLocal, Vec3 pDestination)
+void SDK::WalkTo(CUserCmd* pCmd, CTFPlayer* pLocal, Vec3 vTo, float flScale)
 {
-	Vec3 localPos = pLocal->m_vecOrigin();
-	WalkTo(pCmd, pLocal, localPos, pDestination, 1.f);
+	Vec3 vLocalPos = pLocal->m_vecOrigin();
+	WalkTo(pCmd, pLocal, vLocalPos, vTo, flScale);
 }
-
-
 
 class CTraceFilterSetup : public ITraceFilter // trace filter solely for GetProjectileFireSetup
 {

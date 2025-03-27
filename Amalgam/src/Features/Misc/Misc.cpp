@@ -149,49 +149,43 @@ void CMisc::AutoStrafe(CTFPlayer* pLocal, CUserCmd* pCmd)
 
 void CMisc::AutoPeek(CTFPlayer* pLocal, CUserCmd* pCmd)
 {
-	static bool bPosPlaced = false;
 	static bool bReturning = false;
-
 	if (Vars::CL_Move::AutoPeek.Value)
 	{
-		const Vec3 localPos = pLocal->GetAbsOrigin();
+		const Vec3 vLocalPos = pLocal->m_vecOrigin();
 
-		// We just started peeking. Save the return position!
-		if (!bPosPlaced)
+		if (G::Attacking && m_bPeekPlaced)
+			bReturning = true;
+		if (!bReturning && !pLocal->m_hGroundEntity())
+			m_bPeekPlaced = false;
+
+
+		if (!m_bPeekPlaced)
 		{
-			if (pLocal->m_hGroundEntity())
-			{
-				vPeekReturnPos = localPos;
-				bPosPlaced = true;
-			}
+			m_vPeekReturnPos = vLocalPos;
+			m_bPeekPlaced = true;
 		}
 		else
 		{
 			static Timer tTimer = {};
 			if (tTimer.Run(0.7f))
-				H::Particles.DispatchParticleEffect("ping_circle", vPeekReturnPos, {});
+				H::Particles.DispatchParticleEffect("ping_circle", m_vPeekReturnPos, {});
 		}
-
-		// We've just attacked. Let's return!
-		if (G::LastUserCmd->buttons & IN_ATTACK || G::Attacking)
-			bReturning = true;
 
 		if (bReturning)
 		{
-			if (localPos.DistTo(vPeekReturnPos) < 7.f)
+			if (vLocalPos.DistTo(m_vPeekReturnPos) < 8.f)
 			{
 				bReturning = false;
 				return;
 			}
 
-			SDK::WalkTo(pCmd, pLocal, vPeekReturnPos);
+			SDK::WalkTo(pCmd, pLocal, m_vPeekReturnPos);
+			pCmd->buttons &= ~IN_JUMP;
 		}
 	}
 	else
-	{
-		bPosPlaced = bReturning = false;
-		vPeekReturnPos = Vec3();
-	}
+		m_bPeekPlaced = bReturning = false;
 }
 
 void CMisc::MovementLock(CTFPlayer* pLocal, CUserCmd* pCmd)
@@ -204,31 +198,16 @@ void CMisc::MovementLock(CTFPlayer* pLocal, CUserCmd* pCmd)
 		return;
 	}
 
-	Vec3 vVel = pLocal->m_vecVelocity();
-	static Vec3 vLastTickVel = {};
-	static Vec3 vDir = {};
-
-	if ( !bLock && static_cast< int >( vVel.x ) == 0 && static_cast< int >( vVel.y ) == 0 && static_cast< int >( vVel.z ) == -6
-		&& static_cast< int >( vLastTickVel.x ) == 0 && static_cast< int >( vLastTickVel.y ) == 0 && static_cast< int >( vLastTickVel.z ) == -6 )
+	static Vec3 vMove = {}, vView = {};
+	if (!bLock)
 	{
 		bLock = true;
-		vDir = Math::RotatePoint({ pCmd->forwardmove * (fmodf(fabsf(pCmd->viewangles.x), 180.f) > 90.f ? -1 : 1), -pCmd->sidemove, 0.f }, {}, { 0, pCmd->viewangles.y, 0 });
-		vDir.z = pCmd->upmove;
+		vMove = { pCmd->forwardmove, pCmd->sidemove, pCmd->upmove };
+		vView = pCmd->viewangles;
 	}
 
-	vLastTickVel = vVel;
-
-	if (bLock && static_cast<int>(vVel.x) != 0 && static_cast<int>(vVel.y) != 0 && static_cast<int>(vVel.z) != -6)
-	{
-		bLock = false;
-	}
-
-	if ( !bLock )
-		return;
-
-	Vec3 vMove = Math::RotatePoint(vDir, {}, { 0, -pCmd->viewangles.y, 0 });
-	pCmd->forwardmove = vMove.x * (fmodf(fabsf(pCmd->viewangles.x), 180.f) > 90.f ? -1 : 1);
-	pCmd->sidemove = -vMove.y, pCmd->upmove = vDir.z;
+	pCmd->forwardmove = vMove.x, pCmd->sidemove = vMove.y, pCmd->upmove = vMove.z;
+	SDK::FixMovement(pCmd, vView, pCmd->viewangles);
 }
 
 void CMisc::BreakJump(CTFPlayer* pLocal, CUserCmd* pCmd)
@@ -379,7 +358,7 @@ void CMisc::PingReducer()
 	const int Ping = pResource->GetPing( I::EngineClient->GetLocalPlayer( ) );
 	const int iTarget = Vars::Misc::Exploits::PingReducer.Value && ( Ping > Vars::Misc::Exploits::PingTarget.Value ) ? -1 : iCmdRate;
 
-	NET_SetConVar cmd("cl_cmdrate", std::to_string(iWishCmdrate = iTarget).c_str());
+	NET_SetConVar cmd("cl_cmdrate", std::to_string(m_iWishCmdrate = iTarget).c_str());
 	pNetChan->SendNetMsg(cmd);
 }
 
@@ -525,13 +504,16 @@ void CMisc::Event(IGameEvent* pEvent, uint32_t uHash)
 	case FNV1A::Hash32Const("client_disconnect"):
 	case FNV1A::Hash32Const("client_beginconnect"):
 	case FNV1A::Hash32Const("game_newmap"):
-		iWishCmdrate /*= iWishUpdaterate*/ = -1;
+		m_iWishCmdrate /*= m_iWishUpdaterate*/ = -1;
 		F::Backtrack.m_flWishInterp = -1.f;
 		[[fallthrough]];
 	case FNV1A::Hash32Const("teamplay_round_start"):
 		G::LineStorage.clear();
 		G::BoxStorage.clear();
 		G::PathStorage.clear();
+		break;
+	case FNV1A::Hash32Const("player_spawn"):
+		m_bPeekPlaced = false;
 	}
 }
 

@@ -370,7 +370,7 @@ void CNavParser::Map::UpdateRespawnRooms()
 
 	if (vFoundEnts.empty())
 	{
-		SDK::Output("CNavParser::Map::UpdateRespawnRooms", std::format("Couldn't find any room entities").c_str(), { 255, 50, 50, 255 }, Vars::Debug::Logging.Value);
+		SDK::Output("CNavParser::Map::UpdateRespawnRooms", std::format("Couldn't find any room entities").c_str(), { 255, 50, 50 }, Vars::Debug::Logging.Value);
 		return;
 	}
 
@@ -738,7 +738,7 @@ void CNavEngine::updateStuckTime()
 		if (map->connection_stuck_time[key].time_stuck > TIME_TO_TICKS(Vars::Misc::Movement::NavEngine::StuckDetectTime.Value))
 		{
 			const auto expire_tick = TICKCOUNT_TIMESTAMP(Vars::Misc::Movement::NavEngine::StuckBlacklistTime.Value);
-			SDK::Output("CNavEngine", std::format("Stuck for too long, blacklisting the node (expires on tick: {})", expire_tick).c_str(), { 255, 131, 131, 255 }, Vars::Debug::Logging.Value);
+			SDK::Output("CNavEngine", std::format("Stuck for too long, blacklisting the node (expires on tick: {})", expire_tick).c_str(), { 255, 131, 131 }, Vars::Debug::Logging.Value, Vars::Debug::Logging.Value);
 			map->vischeck_cache[key].expire_tick = expire_tick;
 			map->vischeck_cache[key].vischeck_state = false;
 			abandonPath();
@@ -773,7 +773,7 @@ void CNavEngine::Reset(bool bForced)
 				return;
 
 			nav_path = std::format("{}/tf/{}.nav", cwd, lvl_name);
-			SDK::Output("NavEngine", std::format("Nav File location: {}", nav_path).c_str(), Color_t(50, 255, 50, 255), Vars::Debug::Logging.Value);
+			SDK::Output("NavEngine", std::format("Nav File location: {}", nav_path).c_str(), { 50, 255, 50 }, Vars::Debug::Logging.Value);
 			map = std::make_unique<CNavParser::Map>(nav_path.c_str());
 		}
 	}
@@ -1006,7 +1006,7 @@ void CNavEngine::followCrumbs(CTFPlayer* pLocal, CUserCmd* pCmd)
 			if (!vel.IsZero(40.0f))
 				inactivity.Update();
 			else
-				SDK::Output("CNavEngine", std::format("Spent too much time on the crumb, assuming were stuck").c_str(), { 255, 131, 131, 255 }, Vars::Debug::Logging.Value);
+				SDK::Output("CNavEngine", std::format("Spent too much time on the crumb, assuming were stuck").c_str(), { 255, 131, 131 }, Vars::Debug::Logging.Value, Vars::Debug::Logging.Value);
 		}
 	}
 

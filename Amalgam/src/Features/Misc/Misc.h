@@ -23,7 +23,9 @@ class CMisc
 	void FastMovement(CTFPlayer* pLocal, CUserCmd* pCmd);
 
 	void EdgeJump(CTFPlayer* pLocal, CUserCmd* pCmd, bool bPost = false);
-	Vec3 vPeekReturnPos = {};
+
+	bool m_bPeekPlaced = false;
+	Vec3 m_vPeekReturnPos = {};
 	//bool bSteamCleared = false;
 
 public:
@@ -37,9 +39,9 @@ public:
 	void LockAchievements();
 	bool SteamRPC();
 
-	int iWishCmdrate = -1;
+	int m_iWishCmdrate = -1;
+	//int m_iWishUpdaterate = -1;
 	bool m_bAntiAFK = false;
-	//int iWishUpdaterate = -1;
 };
 
 ADD_FEATURE(CMisc, Misc)

@@ -17,7 +17,6 @@ struct Target_t
 
 	TickRecord m_tRecord = {};
 	bool m_bBacktrack = false;
-	bool m_bDormant = false;
 };
 
 class CAimbotGlobal
