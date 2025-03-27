@@ -123,7 +123,7 @@ void CMenu::MenuAimbot(int iTab)
 				FDropdown("Target selection", Vars::Aimbot::General::TargetSelection, { "FOV", "Distance" }, {}, FDropdown_Right);
 				FDropdown("Target", Vars::Aimbot::General::Target, { "Players", "Sentries", "Dispensers", "Teleporters", "Stickies", "NPCs", "Bombs" }, {}, FDropdown_Left | FDropdown_Multi);
 				FDropdown("Ignore", Vars::Aimbot::General::Ignore, { "Friends", "Party", "Invulnerable", "Cloaked", "Unsimulated players", "Dead Ringer", "Vaccinator", "Disguised", "Taunting" }, {}, FDropdown_Right | FDropdown_Multi);
-				FSlider("Aim FOV", Vars::Aimbot::General::AimFOV, 0.f, 180.f, 1.f, "%g", FSlider_Clamp | FSlider_Precision);
+				FSlider("Aim FOV", Vars::Aimbot::General::AimFOV, 0.f, 360.f, 1.f, "%g", FSlider_Clamp | FSlider_Precision);
 				FSlider("Max targets", Vars::Aimbot::General::MaxTargets, 1, 6, 1, "%i", FSlider_Left | FSlider_Min);
 				PushTransparent(FGet(Vars::Aimbot::General::AimType) != Vars::Aimbot::General::AimTypeEnum::Smooth && FGet(Vars::Aimbot::General::AimType) != Vars::Aimbot::General::AimTypeEnum::Assistive);
 				{
@@ -1253,9 +1253,8 @@ void CMenu::MenuMisc(int iTab)
 				FToggle("Auto accept item drops", Vars::Misc::Automation::AcceptItemDrops, FToggle_Right);
 				FToggle("Auto F2 ignored", Vars::Misc::Automation::AutoF2Ignored, FToggle_Left);
 				FToggle("Auto F1 priority", Vars::Misc::Automation::AutoF1Priority, FToggle_Right);
-				FToggle("Noise spam", Vars::Misc::Automation::NoiseSpam, FToggle_Left);
-				FDropdown("Voice command spam", Vars::Misc::Automation::VoiceCommandSpam, { "Off", "Random", "Medic", "Thanks", "Go Go Go", "Move Up", "Go Left", "Go Right", "Yes", "No", "Incoming", "Spy", "Sentry Ahead", "Need Teleporter Here", "Pootis", "Need Sentry Here", "Activate Charge", "Help", "Battle Cry", "Cheers", "Jeers", "Positive", "Negative", "Nice Shot", "Nice Job" }, {}, FDropdown_Right);
-				FSlider("Voice command interval", Vars::Misc::Automation::VoiceCommandInterval, 0.5f, 10.0f, 0.1f, "%.1fs", FSlider_Left);
+				FDropdown("Voice command spam", Vars::Misc::Automation::VoiceCommandSpam, { "Off", "Random", "Medic", "Thanks", "Nice Shot", "Cheers", "Jeers" }, {}, FDropdown_Left);
+				FToggle("Noise spam", Vars::Misc::Automation::NoiseSpam, FToggle_Right);
 			} EndSection();
 
 			/* Column 2 */
@@ -1291,6 +1290,12 @@ void CMenu::MenuMisc(int iTab)
 				);
 				FToggle("Freeze queue", Vars::Misc::Queueing::FreezeQueue, FToggle_Left);
 				FToggle("Auto queue", Vars::Misc::Queueing::AutoCasualQueue, FToggle_Right);
+				FToggle("Auto vote map", Vars::Misc::MannVsMachine::AutoVoteMap, FToggle_Left);
+				PushTransparent(!FGet(Vars::Misc::MannVsMachine::AutoVoteMap));
+				{
+					FSlider("Auto vote map option", Vars::Misc::MannVsMachine::AutoVoteMapOption, 0, 2, 1, "%i", FSlider_Clamp);
+				}
+				PopTransparent();
 			} EndSection();
 			if (Section("Navbot", true))
 			{
@@ -1346,7 +1351,7 @@ void CMenu::MenuMisc(int iTab)
 			{
 				FToggle("Instant respawn", Vars::Misc::MannVsMachine::InstantRespawn, FToggle_Left);
 				FToggle("Instant revive", Vars::Misc::MannVsMachine::InstantRevive, FToggle_Right);
-				FToggle("Allow MVM inspect", Vars::Misc::MannVsMachine::AllowInspect);
+				FToggle("Allow MVM inspect", Vars::Misc::MannVsMachine::AllowInspect, FToggle_Left);
 			} EndSection();
 			if (Section("Steam RPC", true))
 			{

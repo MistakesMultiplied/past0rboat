@@ -15,7 +15,7 @@
 bool CEventListener::Initialize()
 {
 	std::vector<const char*> vEvents = { 
-		"client_beginconnect", "client_connected", "client_disconnect", "game_newmap", "teamplay_round_start", "player_connect_client", "player_spawn", "player_death", "player_changeclass", "player_hurt", "vote_cast", "item_pickup", "revive_player_notify"
+		"client_beginconnect", "client_connected", "client_disconnect", "game_newmap", "teamplay_round_start", "player_connect_client", "player_spawn", "player_death", "player_changeclass", "player_hurt", "vote_cast", "item_pickup", "revive_player_notify", "vote_maps_changed"
 	};
 
 	for (auto szEvent : vEvents)

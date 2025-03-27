@@ -84,7 +84,8 @@ void CAutoAirblast::Run(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCm
 		pProjectile->SetAbsOrigin(vOrigin);
 
 		if (Vars::Aimbot::Projectile::AutoAirblast.Value & Vars::Aimbot::Projectile::AutoAirblastEnum::RespectFOV
-			&& Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, vOrigin) > Vars::Aimbot::General::AimFOV.Value)
+			&& Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, vOrigin) > Vars::Aimbot::General::AimFOV.Value
+			&& Vars::Aimbot::General::AimFOV.Value < 360.f)
 			continue;
 
 		/*

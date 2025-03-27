@@ -66,7 +66,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CTFPlayer* pLocal, CTFWeapon
 			Vec3 vPos = pEntity->GetCenter();
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
-			if (flFOVTo > Vars::Aimbot::General::AimFOV.Value)
+			if (flFOVTo > Vars::Aimbot::General::AimFOV.Value && Vars::Aimbot::General::AimFOV.Value < 360.f)
 				continue;
 
 			float flDistTo = iSort == Vars::Aimbot::General::TargetSelectionEnum::Distance ? vLocalPos.DistTo(vPos) : 0.f;
@@ -95,7 +95,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CTFPlayer* pLocal, CTFWeapon
 				Vec3 vPos = pEntity->GetCenter();
 				Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 				float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
-				if (flFOVTo > Vars::Aimbot::General::AimFOV.Value)
+				if (flFOVTo > Vars::Aimbot::General::AimFOV.Value && Vars::Aimbot::General::AimFOV.Value < 360.f)
 					continue;
 
 				float flDistTo = iSort == Vars::Aimbot::General::TargetSelectionEnum::Distance ? vLocalPos.DistTo(vPos) : 0.f;
@@ -111,7 +111,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CTFPlayer* pLocal, CTFWeapon
 			Vec3 vPos = pEntity->GetCenter();
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
-			if (flFOVTo > Vars::Aimbot::General::AimFOV.Value)
+			if (flFOVTo > Vars::Aimbot::General::AimFOV.Value && Vars::Aimbot::General::AimFOV.Value < 360.f)
 				continue;
 
 			float flDistTo = iSort == Vars::Aimbot::General::TargetSelectionEnum::Distance ? vLocalPos.DistTo(vPos) : 0.f;

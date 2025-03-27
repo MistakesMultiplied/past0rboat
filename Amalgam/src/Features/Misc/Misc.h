@@ -13,7 +13,7 @@ class CMisc
 	void AntiAFK(CTFPlayer* pLocal, CUserCmd* pCmd);
 	void InstantRespawnMVM(CTFPlayer* pLocal);
 	void NoiseSpam(CTFPlayer* pLocal);
-	void VoiceCommandSpam();
+	void VoiceCommandSpam(CTFPlayer* pLocal);
 
 	void CheatsBypass();
 	void PingReducer();

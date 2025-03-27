@@ -53,7 +53,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CTFPlayer* pLocal, CTFWeaponBase*
 			Vec3 vPos = pEntity->GetCenter();
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
-			if (flFOVTo > Vars::Aimbot::General::AimFOV.Value)
+			if (flFOVTo > Vars::Aimbot::General::AimFOV.Value && Vars::Aimbot::General::AimFOV.Value < 360.f)
 				continue;
 
 			float flDistTo = vLocalPos.DistTo(vPos);
@@ -71,7 +71,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CTFPlayer* pLocal, CTFWeaponBase*
 			Vec3 vPos = pEntity->GetCenter();
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
-			if (flFOVTo > Vars::Aimbot::General::AimFOV.Value)
+			if (flFOVTo > Vars::Aimbot::General::AimFOV.Value && Vars::Aimbot::General::AimFOV.Value < 360.f)
 				continue;
 
 			float flDistTo = vLocalPos.DistTo(vPos);
@@ -620,7 +620,7 @@ bool CAimbotMelee::RunSapper(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd
 		const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 		const float flDistTo = vLocalPos.DistTo(vPoint);
 
-		if (flFOVTo > Vars::Aimbot::General::AimFOV.Value)
+		if (flFOVTo > Vars::Aimbot::General::AimFOV.Value && Vars::Aimbot::General::AimFOV.Value < 360.f)
 			continue;
 
 		vValidTargets.emplace_back(pBuilding, TargetEnum::Unknown, vPoint, vAngleTo, flFOVTo, flDistTo);
@@ -796,7 +796,7 @@ std::vector<Target_t> CAimbotMelee::GetTargetBuilding(CTFPlayer* pLocal, CTFWeap
 		const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 		const float flDistTo = vLocalPos.DistTo(vPos);
 
-		if (flFOVTo > Vars::Aimbot::General::AimFOV.Value)
+		if (flFOVTo > Vars::Aimbot::General::AimFOV.Value && Vars::Aimbot::General::AimFOV.Value < 360.f)
 			continue;
 
 		vValidTargets.push_back({ pEntity, TargetEnum::Dispenser, vPos, vAngleTo, flFOVTo, flDistTo });

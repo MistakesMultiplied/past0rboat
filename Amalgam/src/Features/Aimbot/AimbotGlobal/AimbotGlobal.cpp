@@ -44,7 +44,7 @@ bool CAimbotGlobal::PlayerBoneInFOV(CTFPlayer* pTarget, Vec3 vLocalPos, Vec3 vLo
 		}
 	}
 
-	return flMinFOV < Vars::Aimbot::General::AimFOV.Value;
+	return flMinFOV < Vars::Aimbot::General::AimFOV.Value || Vars::Aimbot::General::AimFOV.Value >= 360.f;
 }
 
 bool CAimbotGlobal::PlayerPosInFOV( CTFPlayer* pTarget, Vec3 vLocalPos, Vec3 vLocalAngles, float& flFOVTo, Vec3& vPos, Vec3& vAngleTo )
@@ -53,7 +53,7 @@ bool CAimbotGlobal::PlayerPosInFOV( CTFPlayer* pTarget, Vec3 vLocalPos, Vec3 vLo
 	vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 	flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
-	return flFOVTo < Vars::Aimbot::General::AimFOV.Value;
+	return flFOVTo < Vars::Aimbot::General::AimFOV.Value || Vars::Aimbot::General::AimFOV.Value >= 360.f;
 }
 
 bool CAimbotGlobal::IsHitboxValid(uint32_t uHash, int nHitbox, int iHitboxes)

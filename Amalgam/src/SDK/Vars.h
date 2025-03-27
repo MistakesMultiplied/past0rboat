@@ -769,9 +769,8 @@ namespace Vars
 			CVar(AutoF2Ignored, false)
 			CVar(AutoF1Priority, false)
 			CVarEnum(ForceClass, 0, NONE, Off, Scout, Sniper, Soldier, Demoman, Medic, Heavy, Pyro, Spy, Engineer)
+			CVarEnum(VoiceCommandSpam, 0, NONE, Off, Random, Medic, Thanks, NiceShot, Cheers, Jeers)
 			CVar(NoiseSpam, false)
-		    CVarEnum(VoiceCommandSpam, 0, NONE, Off, Random, Medic, Thanks, GoGoGo, MoveUp, GoLeft, GoRight, Yes, No, Incoming, Spy, SentryAhead, NeedTeleporterHere, Pootis, NeedSentryHere, ActivateCharge, Help, BattleCry, Cheers, Jeers, Positive, Negative, NiceShot, NiceJob)
-		    CVar(VoiceCommandInterval, 4.0f)
 		SUBNAMESPACE_END(Automation)
 
 		SUBNAMESPACE_BEGIN(Sound)
@@ -840,7 +839,9 @@ namespace Vars
 			CVar(InstantRespawn, false)
 			CVar(InstantRevive, false)
 			CVar(AllowInspect, false)
-		SUBNAMESPACE_END(Sound)
+			CVar(AutoVoteMap, false)
+			CVar(AutoVoteMapOption, 0)
+		SUBNAMESPACE_END(MannVsMachine)
 
 		SUBNAMESPACE_BEGIN(Steam)
 			CVar(EnableRPC, false)
