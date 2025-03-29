@@ -307,7 +307,7 @@ namespace F::NamedPipe
 
     void BroadcastLocalBotId()
     {
-        if (hPipe == INVALID_HANDLE_VALUE || botId == -1)
+        if (hPipe == INVALID_HANDLE_VALUE)
         {
             return;
         }
@@ -322,7 +322,7 @@ namespace F::NamedPipe
         int localIndex = I::EngineClient->GetLocalPlayer();
         if (I::EngineClient->GetPlayerInfo(localIndex, &pi))
         {
-            std::string message = std::to_string(botId) + ":LocalBot:" + std::to_string(pi.friendsID) + "\n";
+            std::string message = std::to_string(botId != -1 ? botId : 0) + ":LocalBot:" + std::to_string(pi.friendsID) + "\n";
             DWORD bytesWritten;
             WriteFile(hPipe, message.c_str(), static_cast<DWORD>(message.length()), &bytesWritten, NULL);
             Log("Broadcasted local bot ID: " + std::to_string(pi.friendsID));
@@ -339,25 +339,38 @@ namespace F::NamedPipe
         
         if (messageType == "LocalBot" && !friendsIDstr.empty())
         {
-            uint32_t friendsID = std::stoull(friendsIDstr);
-            
-            if (std::stoi(botNumber) == botId)
+            try
             {
-                return;
-            }
-            
-            localBots[friendsID] = true;
-            Log("Added local bot with friendsID: " + friendsIDstr);
-            
-            PlayerInfo_t pi{};
-            for (int i = 1; i <= I::EngineClient->GetMaxClients(); i++)
-            {
-                if (I::EngineClient->GetPlayerInfo(i, &pi) && pi.friendsID == friendsID)
+                uint32_t friendsID = std::stoull(friendsIDstr);
+                
+                // Don't skip messages from our own bot ID - we might have multiple instances
+                // with the same ID running
+                
+                localBots[friendsID] = true;
+                Log("Added local bot with friendsID: " + friendsIDstr);
+                
+                // Try to find player information and add ignored tag
+                bool tagAdded = false;
+                PlayerInfo_t pi{};
+                for (int i = 1; i <= I::EngineClient->GetMaxClients(); i++)
                 {
-                    F::PlayerUtils.AddTag(friendsID, F::PlayerUtils.TagToIndex(IGNORED_TAG), true, pi.name);
-                    Log("Marked local bot as ignored: " + std::string(pi.name));
-                    break;
+                    if (I::EngineClient->GetPlayerInfo(i, &pi) && pi.friendsID == friendsID)
+                    {
+                        F::PlayerUtils.AddTag(friendsID, F::PlayerUtils.TagToIndex(IGNORED_TAG), true, pi.name);
+                        Log("Marked local bot as ignored: " + std::string(pi.name));
+                        tagAdded = true;
+                        break;
+                    }
                 }
+                
+                if (!tagAdded)
+                {
+                    Log("Could not find player info for friendsID: " + friendsIDstr + " to add ignored tag");
+                }
+            }
+            catch (const std::exception& e)
+            {
+                Log("Error processing LocalBot message: " + std::string(e.what()));
             }
         }
     }
@@ -488,7 +501,7 @@ namespace F::NamedPipe
                     }
                 }
             }
-            std::this_thread::sleep_for(std::chrono::seconds(5));
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
 
         if (hPipe != INVALID_HANDLE_VALUE)

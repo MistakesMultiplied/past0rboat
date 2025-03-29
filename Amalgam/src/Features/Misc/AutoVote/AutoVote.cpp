@@ -7,7 +7,7 @@ void CAutoVote::UserMessage(bf_read& msgData)
 {
 	/*const int iTeam =*/ msgData.ReadByte();
 	const int iVoteID = msgData.ReadLong();
-	/*const int iCaller =*/ msgData.ReadByte();
+	const int iCaller = msgData.ReadByte();
 	char sReason[256]; msgData.ReadString(sReason, sizeof(sReason));
 	char sTarget[256]; msgData.ReadString(sTarget, sizeof(sTarget));
 	const int iTarget = msgData.ReadByte() >> 1;
@@ -26,7 +26,7 @@ void CAutoVote::UserMessage(bf_read& msgData)
 
 
 	PlayerInfo_t callerPi{};
-	if (I::EngineClient->GetPlayerInfo(iTarget, &callerPi))
+	if (I::EngineClient->GetPlayerInfo(iCaller, &callerPi))
 	{
 		if (F::NamedPipe::IsLocalBot(callerPi.friendsID))
 		{
