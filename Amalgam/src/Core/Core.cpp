@@ -90,7 +90,9 @@ void CCore::Unload()
 	{
 		ssFailStream << "\nCtrl + C to copy. Logged to Amalgam\\fail_log.txt. (1)\n";
 		ssFailStream << "Built @ " __DATE__ ", " __TIME__;
+#ifndef TEXTMODE
 		SDK::Output("Failed to load", ssFailStream.str().c_str(), {}, false, true, false, false, false, false, MB_OK | MB_ICONERROR);
+#endif
 		ssFailStream << "\n\n\n\n";
 		std::ofstream file;
 		file.open(F::Configs.m_sConfigPath + "fail_log.txt", std::ios_base::app);
@@ -130,7 +132,9 @@ void CCore::Unload()
 	{
 		ssFailStream << "\nCtrl + C to copy. Logged to Amalgam\\fail_log.txt. (2)\n";
 		ssFailStream << "Built @ " __DATE__ ", " __TIME__;
+#ifndef TEXTMODE
 		SDK::Output("Failed to load", ssFailStream.str().c_str(), {}, false, true, false, false, false, false, MB_OK | MB_ICONERROR);
+#endif
 		ssFailStream << "\n\n\n\n";
 		std::ofstream file;
 		file.open(F::Configs.m_sConfigPath + "fail_log.txt", std::ios_base::app);

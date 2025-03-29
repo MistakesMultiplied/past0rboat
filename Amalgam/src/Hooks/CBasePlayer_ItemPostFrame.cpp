@@ -103,9 +103,9 @@ MAKE_HOOK(CBasePlayer_ItemPostFrame, S::CBasePlayer_ItemPostFrame(), void,
 		auto pStudio = pViewmodel->GetModelPtr();
 		if (!pStudio)
 			return CALL_ORIGINAL(rcx);
-		float flReloadTime = pWeapon->SequenceDuration();
+		float flReloadTime = pViewmodel->SequenceDuration();
 		float flReloadSpeed = 1.f / pViewmodel->m_flPlaybackRate();
-		float flLastCycle = (I::GlobalVars->curtime - pWeapon->m_flReloadPriorNextFire() - 0.015f) / (flReloadTime * flReloadSpeed);
+		float flLastCycle = (I::GlobalVars->curtime - pWeapon->m_flReloadPriorNextFire() - TICK_INTERVAL) / (flReloadTime * flReloadSpeed);
 		float flCurrCycle = (I::GlobalVars->curtime - pWeapon->m_flReloadPriorNextFire()) / (flReloadTime * flReloadSpeed);
 		animevent_t event; int index = 0;
 		index = S::GetAnimationEvent.Call<int>(pStudio, pViewmodel->m_nSequence(), &event, flLastCycle, flCurrCycle, index);

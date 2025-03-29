@@ -99,7 +99,6 @@ static LONG APIENTRY ExceptionFilter(PEXCEPTION_POINTERS ExceptionInfo)
 	static std::unordered_map<LPVOID, bool> mAddresses = {};
 	static bool bException = false;
 
-	// unsure of a way to filter nonfatal exceptions
 	if (ExceptionInfo->ExceptionRecord->ExceptionCode != EXCEPTION_ACCESS_VIOLATION
 		|| !ExceptionInfo->ExceptionRecord->ExceptionAddress || mAddresses.contains(ExceptionInfo->ExceptionRecord->ExceptionAddress)
 		|| !Vars::Debug::CrashLogging.Value
@@ -143,9 +142,9 @@ static LONG APIENTRY ExceptionFilter(PEXCEPTION_POINTERS ExceptionInfo)
 	if (bException)
 		ssErrorStream << "\nShift + Enter to skip repetitive exceptions. ";
 	bException = true;
-
+#ifndef TEXTMODE
 	SDK::Output("Unhandled exception", ssErrorStream.str().c_str(), {}, false, true, false, false, false, false, MB_OK | MB_ICONERROR);
-
+#endif
 	ssErrorStream << "\n\n\n\n";
 	std::ofstream file;
 	file.open(F::Configs.m_sConfigPath + "crash_log.txt", std::ios_base::app);
