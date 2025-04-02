@@ -81,6 +81,7 @@ void CCommands::Initialize()
 			{
 				F::PlayerUtils.AddTag(steamID, F::PlayerUtils.TagToIndex(BOT_IGNORE_TAG), true);
 				F::PlayerUtils.m_mBotIgnoreData[steamID].m_bIsIgnored = true;
+				F::PlayerUtils.m_bSave = true;
 				SDK::Output(std::format("Added BOT ignore status to {}", steamID).c_str());
 			}
 			else

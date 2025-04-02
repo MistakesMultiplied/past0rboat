@@ -289,12 +289,16 @@ bool CPlayerlistUtils::IsIgnored(uint32_t friendsID)
 	if (HasTag(friendsID, TagToIndex(BOT_IGNORE_TAG)))
 	{
 		auto& botData = m_mBotIgnoreData[friendsID];
+		if (!botData.m_bIsIgnored)
+			return false;
+			
 		if (botData.m_iKillCount >= 2)
 		{
 			// nigga u killed me twice, now youll feel my rough.
 			RemoveTag(friendsID, TagToIndex(BOT_IGNORE_TAG), true);
 			botData.m_iKillCount = 0;
 			botData.m_bIsIgnored = false;
+			m_bSave = true; // Mark for saving
 			return false;
 		}
 		return true;
@@ -336,6 +340,7 @@ void CPlayerlistUtils::IncrementBotIgnoreKillCount(uint32_t friendsID)
 	{
 		auto& botData = m_mBotIgnoreData[friendsID];
 		botData.m_iKillCount++;
+		m_bSave = true;
 	}
 }
 

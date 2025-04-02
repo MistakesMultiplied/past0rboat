@@ -14,6 +14,7 @@ class CMisc
 	void InstantRespawnMVM(CTFPlayer* pLocal);
 	void NoiseSpam(CTFPlayer* pLocal);
 	void VoiceCommandSpam(CTFPlayer* pLocal);
+	void Chatspam(CTFPlayer* pLocal);
 
 	void CheatsBypass();
 	void PingReducer();

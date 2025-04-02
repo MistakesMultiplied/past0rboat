@@ -8,7 +8,11 @@
 
 void CMisc::RunPre(CTFPlayer* pLocal, CUserCmd* pCmd)
 {
-	if (!pLocal || !pCmd || !pLocal->IsAlive())
+
+	NoiseSpam(pLocal);
+	VoiceCommandSpam(pLocal);
+	Chatspam(pLocal);
+	if (!pLocal || !pCmd)
 		return;
 
 	if (I::EngineClient && I::EngineClient->IsInGame() && I::EngineClient->IsConnected())
@@ -24,13 +28,11 @@ void CMisc::RunPre(CTFPlayer* pLocal, CUserCmd* pCmd)
 	PingReducer();
 	WeaponSway();
 
-	if (!pLocal)
+	if (!pLocal->IsAlive())
 		return;
 
 	AntiAFK(pLocal, pCmd);
 	InstantRespawnMVM(pLocal);
-	NoiseSpam(pLocal);
-	VoiceCommandSpam(pLocal);
 
 	if (!pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->m_MoveType() != MOVETYPE_WALK || pLocal->IsSwimming() || pLocal->InCond(TF_COND_SHIELD_CHARGE) || pLocal->InCond(TF_COND_HALLOWEEN_KART))
 		return;
@@ -710,49 +712,226 @@ void CMisc::NoiseSpam(CTFPlayer* pLocal)
 {
 	if (!Vars::Misc::Automation::NoiseSpam.Value || !pLocal)
 		return;
-
-	static Timer tTimer{};
-	if (tTimer.Run(1000))
+	
+	if (pLocal->m_bUsingActionSlot())
+		return;
+	
+	static float flLastSpamTime = 0.0f;
+	float flCurrentTime = SDK::PlatFloatTime();
+	
+	if (flCurrentTime - flLastSpamTime < 0.2f) 
+		return;
+	
+	flLastSpamTime = flCurrentTime;
+	
+	KeyValues* kv = new KeyValues("use_action_slot_item_server");
+	if (kv)
 	{
-		KeyValues* kv = new KeyValues("+use_action_slot_item_server");
 		I::EngineClient->ServerCmdKeyValues(kv);
-		KeyValues* kv2 = new KeyValues("-use_action_slot_item_server");
-		I::EngineClient->ServerCmdKeyValues(kv2);
 	}
 }
 
 void CMisc::VoiceCommandSpam(CTFPlayer* pLocal)
 {
-	if (!Vars::Misc::Automation::VoiceCommandSpam.Value)
+	if (!Vars::Misc::Automation::VoiceCommandSpam.Value || !pLocal || !I::EngineClient)
 		return;
 
-	static Timer tVoiceSpamTimer{};
-	if (!tVoiceSpamTimer.Run(6500)) 
-		return;
-
-	switch (Vars::Misc::Automation::VoiceCommandSpam.Value)
+	static float flLastVoiceTime = 0.0f;
+	float flCurrentTime = SDK::PlatFloatTime();
+	
+	if (flCurrentTime - flLastVoiceTime >= 6.5f) // 6500ms in seconds
 	{
-	case Vars::Misc::Automation::VoiceCommandSpamEnum::Random:
+		flLastVoiceTime = flCurrentTime;
+
+		switch (Vars::Misc::Automation::VoiceCommandSpam.Value)
 		{
-			int menu = SDK::RandomInt(0, 2);
-			int command = SDK::RandomInt(0, 8);
-			I::EngineClient->ClientCmd_Unrestricted(("voicemenu " + std::to_string(menu) + " " + std::to_string(command)).c_str());
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::Random:
+			{
+				int menu = SDK::RandomInt(0, 2);
+				int command = SDK::RandomInt(0, 8);
+				std::string cmd = "voicemenu " + std::to_string(menu) + " " + std::to_string(command);
+				I::EngineClient->ClientCmd_Unrestricted(cmd.c_str());
+			}
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::Medic:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 0 0");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::Thanks:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 0 1");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::NiceShot:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 2 6");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::Cheers:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 2 2");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::Jeers:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 2 3");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::GoGoGo:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 0 2");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::MoveUp:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 0 3");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::GoLeft:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 0 4");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::GoRight:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 0 5");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::Yes:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 0 6");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::No:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 0 7");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::Incoming:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 1 0");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::Spy:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 1 1");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::Sentry:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 1 2");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::NeedTeleporter:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 1 3");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::Pootis:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 1 4");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::NeedSentry:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 1 5");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::ActivateCharge:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 1 6");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::Help:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 2 0");
+			break;
+		case Vars::Misc::Automation::VoiceCommandSpamEnum::BattleCry:
+			I::EngineClient->ClientCmd_Unrestricted("voicemenu 2 1");
+			break;
 		}
-		break;
-	case Vars::Misc::Automation::VoiceCommandSpamEnum::Medic:
-		I::EngineClient->ClientCmd_Unrestricted("voicemenu 0 0");
-		break;
-	case Vars::Misc::Automation::VoiceCommandSpamEnum::Thanks:
-		I::EngineClient->ClientCmd_Unrestricted("voicemenu 0 1");
-		break;
-	case Vars::Misc::Automation::VoiceCommandSpamEnum::NiceShot:
-		I::EngineClient->ClientCmd_Unrestricted("voicemenu 2 6");
-		break;
-	case Vars::Misc::Automation::VoiceCommandSpamEnum::Cheers:
-		I::EngineClient->ClientCmd_Unrestricted("voicemenu 2 2");
-		break;
-	case Vars::Misc::Automation::VoiceCommandSpamEnum::Jeers:
-		I::EngineClient->ClientCmd_Unrestricted("voicemenu 2 3");
-		break;
+	}
+}
+
+void CMisc::Chatspam(CTFPlayer* pLocal)
+{
+	if (!Vars::Misc::Chatspam::Enabled.Value || !pLocal || !I::EngineClient)
+		return;
+
+	static float flLastChatTime = 0.0f;
+	float flCurrentTime = SDK::PlatFloatTime();
+	
+	if (flCurrentTime - flLastChatTime >= Vars::Misc::Chatspam::Delay.Value)
+	{
+		flLastChatTime = flCurrentTime;
+
+		std::string message;
+		switch (Vars::Misc::Chatspam::Type.Value)
+		{
+		case 0: // Custom
+			{
+				auto& messages = Vars::Misc::Chatspam::Messages.Value;
+				if (messages.empty())
+					return;
+					
+				size_t index = 0;
+				if (Vars::Misc::Chatspam::Random.Value)
+					index = SDK::RandomInt(0, static_cast<int>(messages.size() - 1));
+				else
+					index = static_cast<size_t>(static_cast<int>(flCurrentTime / Vars::Misc::Chatspam::Delay.Value) % static_cast<int>(messages.size()));
+					
+				message = messages[index];
+			}
+			break;
+		case 1: // Default
+			{
+				static const std::vector<std::string> defaultMessages = {
+					"past0rboat? more like past0rFLOAT",
+					"past0rboat users when they see a real cheat",
+					"past0rboat? More like past0rSINK",
+					"Join our community at dsc.gg/rapetf2",
+					"Looking for more developers - dsc.gg/rapetf2",
+					"Imagine not using Windows TextMode in 2025",
+					"past0rboat - The only cheat with Windows TextMode support",
+					"Your cheat doesn't have TextMode? Must be a skill issue",
+					"past0rboat devs > your favorite p2c devs",
+					"Get good get past0rboat",
+					"Cope harder with your paste",
+					"Why playing the game, when u can own the game?"
+				};
+				
+				size_t index = 0;
+				if (Vars::Misc::Chatspam::Random.Value)
+					index = SDK::RandomInt(0, static_cast<int>(defaultMessages.size() - 1));
+				else
+					index = static_cast<size_t>(static_cast<int>(flCurrentTime / Vars::Misc::Chatspam::Delay.Value) % static_cast<int>(defaultMessages.size()));
+					
+				message = defaultMessages[index];
+			}
+			break;
+		case 2: // Nullcore
+			{
+				static const std::vector<std::string> nullcoreMessages = {
+					"NullCore - Premium TF2 Cheat",
+					"www.nullcore.com",
+					"Nullcore > All",
+					"Nullified by NullCore"
+				};
+				
+				size_t index = 0;
+				if (Vars::Misc::Chatspam::Random.Value)
+					index = SDK::RandomInt(0, static_cast<int>(nullcoreMessages.size() - 1));
+				else
+					index = static_cast<size_t>(static_cast<int>(flCurrentTime / Vars::Misc::Chatspam::Delay.Value) % static_cast<int>(nullcoreMessages.size()));
+					
+				message = nullcoreMessages[index];
+			}
+			break;
+		case 3: // Lmaobox
+			{
+				static const std::vector<std::string> lmaoboxMessages = {
+					"www.LMAOBOX.net - BEST TF2 HACK",
+					"GET GOOD GET LMAOBOX",
+					"LMAOBOX - WAY TO THE TOP"
+				};
+				
+				size_t index = 0;
+				if (Vars::Misc::Chatspam::Random.Value)
+					index = SDK::RandomInt(0, static_cast<int>(lmaoboxMessages.size() - 1));
+				else
+					index = static_cast<size_t>(static_cast<int>(flCurrentTime / Vars::Misc::Chatspam::Delay.Value) % static_cast<int>(lmaoboxMessages.size()));
+					
+				message = lmaoboxMessages[index];
+			}
+			break;
+		case 4: // Lithium
+			{
+				static const std::vector<std::string> lithiumMessages = {
+					"Lithium - The definitive TF2 experience",
+					"Get Lithium @ lithiumcheats.com",
+					"Lithium - Always one step ahead"
+				};
+				
+				size_t index = 0;
+				if (Vars::Misc::Chatspam::Random.Value)
+					index = SDK::RandomInt(0, static_cast<int>(lithiumMessages.size() - 1));
+				else
+					index = static_cast<size_t>(static_cast<int>(flCurrentTime / Vars::Misc::Chatspam::Delay.Value) % static_cast<int>(lithiumMessages.size()));
+					
+				message = lithiumMessages[index];
+			}
+			break;
+		default:
+			return;
+		}
+
+		// Send the message to chat
+		std::string chatCommand = Vars::Misc::Chatspam::TeamOnly.Value ? "say_team \"" : "say \"";
+		chatCommand += message + "\"";
+		I::EngineClient->ClientCmd_Unrestricted(chatCommand.c_str());
 	}
 }

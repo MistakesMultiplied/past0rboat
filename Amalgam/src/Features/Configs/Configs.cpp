@@ -356,7 +356,7 @@ bool CConfigs::SaveConfig(const std::string& sConfigName, bool bNotify)
 		}
 		writeTree.put_child("ConVars", varTree);
 
-		write_json(m_sConfigPath + sConfigName + m_sConfigExtension, writeTree);
+		write_json(m_sConfigPath + "\\" + sConfigName + m_sConfigExtension, writeTree);
 		m_sCurrentConfig = sConfigName; m_sCurrentVisuals = "";
 		if (bNotify)
 			SDK::Output("Amalgam", std::format("Config {} saved", sConfigName).c_str(), { 175, 150, 255 }, true, true, true);
@@ -374,7 +374,7 @@ bool CConfigs::SaveConfig(const std::string& sConfigName, bool bNotify)
 bool CConfigs::LoadConfig(const std::string& sConfigName, bool bNotify)
 {
 	// Check if the config exists
-	if (!std::filesystem::exists(m_sConfigPath + sConfigName + m_sConfigExtension))
+	if (!std::filesystem::exists(m_sConfigPath + "\\" + sConfigName + m_sConfigExtension))
 	{
 		// Save default config if one doesn't yet exist
 		if (sConfigName == std::string("default"))
@@ -389,7 +389,7 @@ bool CConfigs::LoadConfig(const std::string& sConfigName, bool bNotify)
 		bool bLoadNosave = GetAsyncKeyState(VK_SHIFT) & 0x8000;
 
 		boost::property_tree::ptree readTree;
-		read_json(m_sConfigPath + sConfigName + m_sConfigExtension, readTree);
+		read_json(m_sConfigPath + "\\" + sConfigName + m_sConfigExtension, readTree);
 		
 		bool bLegacy = false;
 		if (const auto condTree = readTree.get_child_optional("Binds"))
@@ -517,7 +517,7 @@ bool CConfigs::SaveVisual(const std::string& sConfigName, bool bNotify)
 			else SaveMisc(WindowBox_t, writeTree)
 		}
 
-		write_json(m_sVisualsPath + sConfigName + m_sConfigExtension, writeTree);
+		write_json(m_sVisualsPath + "\\" + sConfigName + m_sConfigExtension, writeTree);
 		if (bNotify)
 			SDK::Output("Amalgam", std::format("Visual config {} saved", sConfigName).c_str(), { 175, 150, 255 }, true, true, true);
 	}
@@ -532,7 +532,7 @@ bool CConfigs::SaveVisual(const std::string& sConfigName, bool bNotify)
 bool CConfigs::LoadVisual(const std::string& sConfigName, bool bNotify)
 {
 	// Check if the visual config exists
-	if (!std::filesystem::exists(m_sVisualsPath + sConfigName + m_sConfigExtension))
+	if (!std::filesystem::exists(m_sVisualsPath + "\\" + sConfigName + m_sConfigExtension))
 	{
 		//if (sConfigName == std::string("default"))
 		//	SaveVisual("default");
@@ -544,7 +544,7 @@ bool CConfigs::LoadVisual(const std::string& sConfigName, bool bNotify)
 		bool bLoadNosave = GetAsyncKeyState(VK_SHIFT) & 0x8000;
 
 		boost::property_tree::ptree readTree;
-		read_json(m_sVisualsPath + sConfigName + m_sConfigExtension, readTree);
+		read_json(m_sVisualsPath + "\\" + sConfigName + m_sConfigExtension, readTree);
 
 		for (auto& var : g_Vars)
 		{
@@ -585,7 +585,7 @@ void CConfigs::RemoveConfig(const std::string& sConfigName, bool bNotify)
 	{
 		if (FNV1A::Hash32(sConfigName.c_str()) != FNV1A::Hash32Const("default"))
 		{
-			std::filesystem::remove(m_sConfigPath + sConfigName + m_sConfigExtension);
+			std::filesystem::remove(m_sConfigPath + "\\" + sConfigName + m_sConfigExtension);
 
 			LoadConfig("default", false);
 
@@ -605,7 +605,7 @@ void CConfigs::RemoveVisual(const std::string& sConfigName, bool bNotify)
 {
 	try
 	{
-		std::filesystem::remove(m_sVisualsPath + sConfigName + m_sConfigExtension);
+		std::filesystem::remove(m_sVisualsPath + "\\" + sConfigName + m_sConfigExtension);
 
 		if (bNotify)
 			SDK::Output("Amalgam", std::format("Visual config {} deleted", sConfigName).c_str(), { 175, 150, 255 }, true, true, true);

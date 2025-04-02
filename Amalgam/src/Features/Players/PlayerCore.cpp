@@ -65,6 +65,17 @@ void CPlayerlistCore::SavePlayerlist()
 		}
 		writeTree.put_child("Aliases", aliasTree);
 
+		boost::property_tree::ptree botIgnoreTree;
+		for (auto& [friendsID, botData] : F::PlayerUtils.m_mBotIgnoreData)
+		{
+			boost::property_tree::ptree dataEntry;
+			dataEntry.put("KillCount", botData.m_iKillCount);
+			dataEntry.put("IsIgnored", botData.m_bIsIgnored);
+			
+			botIgnoreTree.put_child(std::to_string(friendsID), dataEntry);
+		}
+		writeTree.put_child("BotIgnore", botIgnoreTree);
+
 		// Save the file
 		write_json(F::Configs.m_sCorePath + "Players.json", writeTree);
 
@@ -90,6 +101,7 @@ void CPlayerlistCore::LoadPlayerlist()
 			read_json(F::Configs.m_sCorePath + "Players.json", readTree);
 			F::PlayerUtils.m_mPlayerTags.clear();
 			F::PlayerUtils.m_mPlayerAliases.clear();
+			F::PlayerUtils.m_mBotIgnoreData.clear();
 			F::PlayerUtils.m_vTags = {
 				{ "Default", { 200, 200, 200, 255 }, 0, false, false, true },
 				{ "Ignored", { 200, 200, 200, 255 }, -1, false, true, true },
@@ -224,6 +236,24 @@ void CPlayerlistCore::LoadPlayerlist()
 
 					if (!sAlias.empty())
 						F::PlayerUtils.m_mPlayerAliases[friendsID] = player.second.data();
+				}
+			}
+			
+			// Load bot ignore data
+			if (auto botIgnoreTree = readTree.get_child_optional("BotIgnore"))
+			{
+				for (auto& player : *botIgnoreTree)
+				{
+					uint32_t friendsID = std::stoi(player.first);
+					BotIgnoreData botData;
+					
+					if (auto getValue = player.second.get_optional<int>("KillCount")) 
+						botData.m_iKillCount = *getValue;
+					
+					if (auto getValue = player.second.get_optional<bool>("IsIgnored")) 
+						botData.m_bIsIgnored = *getValue;
+					
+					F::PlayerUtils.m_mBotIgnoreData[friendsID] = botData;
 				}
 			}
 		}

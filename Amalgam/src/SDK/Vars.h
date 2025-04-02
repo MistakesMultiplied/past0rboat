@@ -769,7 +769,7 @@ namespace Vars
 			CVar(AutoF2Ignored, false)
 			CVar(AutoF1Priority, false)
 			CVarEnum(ForceClass, 0, NONE, Off, Scout, Sniper, Soldier, Demoman, Medic, Heavy, Pyro, Spy, Engineer)
-			CVarEnum(VoiceCommandSpam, 0, NONE, Off, Random, Medic, Thanks, NiceShot, Cheers, Jeers)
+			CVarEnum(VoiceCommandSpam, 0, NONE, Off, Random, Medic, Thanks, NiceShot, Cheers, Jeers, GoGoGo, MoveUp, GoLeft, GoRight, Yes, No, Incoming, Spy, Sentry, NeedTeleporter, Pootis, NeedSentry, ActivateCharge, Help, BattleCry)
 			CVar(NoiseSpam, false)
 		SUBNAMESPACE_END(Automation)
 
@@ -779,6 +779,15 @@ namespace Vars
 			CVar(RemoveDSP, false)
 			CVar(GiantWeaponSounds, false)
 		SUBNAMESPACE_END(Sound)
+
+		SUBNAMESPACE_BEGIN(Chatspam)
+			CVar(Enabled, false)
+			CVarEnum(Type, 0, NONE, Custom, Default, Nullcore, Lmaobox, Lithium)
+			CVar(Random, false)
+			CVar(TeamOnly, false)
+			CVar(Delay, 3.f)
+			CVar(Messages, std::vector<std::string>())
+		SUBNAMESPACE_END(Chatspam)
 
 		SUBNAMESPACE_BEGIN(Game)
 			CVar(NetworkFix, false)

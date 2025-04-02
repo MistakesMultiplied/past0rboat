@@ -356,8 +356,10 @@ namespace F::NamedPipe
                 {
                     if (I::EngineClient->GetPlayerInfo(i, &pi) && pi.friendsID == friendsID)
                     {
+                        // Add both IGNORED_TAG and FRIEND_TAG
                         F::PlayerUtils.AddTag(friendsID, F::PlayerUtils.TagToIndex(IGNORED_TAG), true, pi.name);
-                        Log("Marked local bot as ignored: " + std::string(pi.name));
+                        F::PlayerUtils.AddTag(friendsID, F::PlayerUtils.TagToIndex(FRIEND_TAG), true, pi.name);
+                        Log("Marked local bot as ignored and friend: " + std::string(pi.name));
                         tagAdded = true;
                         break;
                     }
@@ -365,7 +367,7 @@ namespace F::NamedPipe
                 
                 if (!tagAdded)
                 {
-                    Log("Could not find player info for friendsID: " + friendsIDstr + " to add ignored tag");
+                    Log("Could not find player info for friendsID: " + friendsIDstr + " to add tags");
                 }
             }
             catch (const std::exception& e)
@@ -389,7 +391,19 @@ namespace F::NamedPipe
         
         for (const auto& [friendsID, isLocal] : localBots)
         {
+            bool needsUpdate = false;
+            
             if (!F::PlayerUtils.HasTag(friendsID, F::PlayerUtils.TagToIndex(IGNORED_TAG)))
+            {
+                needsUpdate = true;
+            }
+            
+            if (!F::PlayerUtils.HasTag(friendsID, F::PlayerUtils.TagToIndex(FRIEND_TAG)))
+            {
+                needsUpdate = true;
+            }
+            
+            if (needsUpdate)
             {
                 PlayerInfo_t pi{};
                 for (int i = 1; i <= I::EngineClient->GetMaxClients(); i++)
@@ -397,7 +411,8 @@ namespace F::NamedPipe
                     if (I::EngineClient->GetPlayerInfo(i, &pi) && pi.friendsID == friendsID)
                     {
                         F::PlayerUtils.AddTag(friendsID, F::PlayerUtils.TagToIndex(IGNORED_TAG), true, pi.name);
-                        Log("Marked local bot as ignored: " + std::string(pi.name));
+                        F::PlayerUtils.AddTag(friendsID, F::PlayerUtils.TagToIndex(FRIEND_TAG), true, pi.name);
+                        Log("Marked local bot as ignored and friend: " + std::string(pi.name));
                         break;
                     }
                 }

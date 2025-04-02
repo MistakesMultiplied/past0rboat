@@ -4,6 +4,7 @@
 #include "NavEngine/Controllers/PLController/PLController.h"
 #include "NavEngine/Controllers/Controller.h"
 #include "../Players/PlayerUtils.h"
+#include "../Misc/NamedPipe/NamedPipe.h"
 #include "../Aimbot/AimbotGlobal/AimbotGlobal.h"
 #include "../TickHandler/TickHandler.h"
 #include "../PacketManip/FakeLag/FakeLag.h"
@@ -77,6 +78,11 @@ int CNavBot::ShouldTarget(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, int iPlayer
 	auto pPlayer = pEntity->As<CTFPlayer>();
 	if (!pPlayer->IsAlive() || pPlayer == pLocal)
 		return -1;
+
+	// pipe local playa
+	PlayerInfo_t pi{};
+	if (I::EngineClient->GetPlayerInfo(iPlayerIdx, &pi) && F::NamedPipe::IsLocalBot(pi.friendsID))
+		return 0;
 
 	if (F::PlayerUtils.IsIgnored(iPlayerIdx))
 		return 0;

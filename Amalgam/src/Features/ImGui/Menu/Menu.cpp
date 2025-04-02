@@ -69,11 +69,11 @@ void CMenu::DrawMenu()
 			{
 				{ "AIMBOT", "GENERAL", "HVH" },
 				{ "VISUALS", "ESP", "CHAMS", "GLOW", "MISC##", "RADAR", "MENU" },
-				{ "MISC" },
+				{ "MISC", "GENERAL", "CHATSPAM" },
 				{ "LOGS", "SETTINGS##", "OUTPUT" },
 				{ "SETTINGS", "CONFIG", "BINDS", "PLAYERLIST", "MATERIALS" }
 			},
-			{ &iTab, &iAimbotTab, &iVisualsTab, nullptr, &iLogsTab, &iSettingsTab },
+			{ &iTab, &iAimbotTab, &iVisualsTab, &iMiscTab, &iLogsTab, &iSettingsTab },
 			{ H::Draw.Scale(124), H::Draw.Scale(36) },
 			{ H::Draw.Scale(8), H::Draw.Scale(8) + flOffset },
 			FTabs_Vertical | FTabs_HorizontalIcons | FTabs_AlignLeft | FTabs_BarLeft,
@@ -1140,7 +1140,7 @@ void CMenu::MenuMisc(int iTab)
 
 	switch (iTab)
 	{
-	case 0:
+	case 0: // General
 		if (BeginTable("MiscTable", 2))
 		{
 			/* Column 1 */
@@ -1253,7 +1253,7 @@ void CMenu::MenuMisc(int iTab)
 				FToggle("Auto accept item drops", Vars::Misc::Automation::AcceptItemDrops, FToggle_Right);
 				FToggle("Auto F2 ignored", Vars::Misc::Automation::AutoF2Ignored, FToggle_Left);
 				FToggle("Auto F1 priority", Vars::Misc::Automation::AutoF1Priority, FToggle_Right);
-				FDropdown("Voice command spam", Vars::Misc::Automation::VoiceCommandSpam, { "Off", "Random", "Medic", "Thanks", "Nice Shot", "Cheers", "Jeers" }, {}, FDropdown_Left);
+				FDropdown("Voice command spam", Vars::Misc::Automation::VoiceCommandSpam, { "Off", "Random", "Medic", "Thanks", "Nice Shot", "Cheers", "Jeers", "Go Go Go", "Move Up", "Go Left", "Go Right", "Yes", "No", "Incoming", "Spy", "Sentry Ahead", "Need Teleporter", "Pootis", "Need Sentry", "Activate Charge", "Help", "Battle Cry" }, {}, FDropdown_Left);
 				FToggle("Noise spam", Vars::Misc::Automation::NoiseSpam, FToggle_Right);
 			} EndSection();
 
@@ -1364,6 +1364,166 @@ void CMenu::MenuMisc(int iTab)
 
 			EndTable();
 		}
+		break;
+	case 1: // Chatspam
+		if (Section("Chatspam Settings"))
+		{
+			FToggle("Enable", Vars::Misc::Chatspam::Enabled, FToggle_Left);
+			FDropdown("Type", Vars::Misc::Chatspam::Type, { "Misc", "Default", "Nullcore", "Lmaobox", "Lithium" }, {}, FDropdown_Right);
+			PushTransparent(!FGet(Vars::Misc::Chatspam::Enabled));
+			{
+				FToggle("Random", Vars::Misc::Chatspam::Random, FToggle_Left);
+				FToggle("Team only", Vars::Misc::Chatspam::TeamOnly, FToggle_Right);
+				FSlider("Delay", Vars::Misc::Chatspam::Delay, 1.f, 10.f, 0.5f, "%gs", FSlider_Clamp);
+			}
+			PopTransparent();
+		} EndSection();
+
+		if (FGet(Vars::Misc::Chatspam::Type) == 0 && FGet(Vars::Misc::Chatspam::Enabled)) // Misc type (renamed from Custom)
+		{
+			if (Section("Custom Messages"))
+			{
+				static std::string newMessage;
+				
+				// Add message input and button
+				Text("Add new message:");
+				PushStyleVar(ImGuiStyleVar_FrameRounding, H::Draw.Scale(4));
+				PushStyleColor(ImGuiCol_FrameBg, ImColor(40, 40, 40, 255).Value);
+				SetNextItemWidth(GetContentRegionAvail().x - H::Draw.Scale(80));
+				FSDropdown("##NewMessage", &newMessage, {}, FDropdown_Left | FSDropdown_Custom);
+				SameLine();
+				if (FButton("Add", FButton_Right))
+				{
+					if (!newMessage.empty())
+					{
+						Vars::Misc::Chatspam::Messages.Value.push_back(newMessage);
+						newMessage.clear();
+					}
+				}
+				PopStyleColor();
+				PopStyleVar();
+
+				Spacing();
+				
+				// Create a styled table for messages
+				if (!Vars::Misc::Chatspam::Messages.Value.empty())
+				{
+					PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(H::Draw.Scale(5), H::Draw.Scale(5)));
+					PushStyleColor(ImGuiCol_TableHeaderBg, ImColor(50, 50, 50, 255).Value);
+					PushStyleColor(ImGuiCol_TableBorderStrong, ImColor(70, 70, 70, 255).Value);
+					PushStyleColor(ImGuiCol_TableBorderLight, ImColor(60, 60, 60, 255).Value);
+					PushStyleColor(ImGuiCol_TableRowBg, ImColor(30, 30, 30, 180).Value);
+					PushStyleColor(ImGuiCol_TableRowBgAlt, ImColor(35, 35, 35, 180).Value);
+					
+					if (BeginTable("##MessagesTable", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | 
+						ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody, 
+						ImVec2(GetContentRegionAvail().x, H::Draw.Scale(200))))
+					{
+						TableSetupColumn("Message", ImGuiTableColumnFlags_WidthStretch);
+						TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, H::Draw.Scale(65));
+						TableHeadersRow();
+						
+						static std::string editingMessage;
+						static int editingIndex = -1;
+						
+						for (int i = 0; i < Vars::Misc::Chatspam::Messages.Value.size(); i++)
+						{
+							TableNextRow();
+							TableSetColumnIndex(0);
+							
+							if (editingIndex == i)
+							{
+								PushID(i);
+								PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(H::Draw.Scale(4), H::Draw.Scale(2)));
+								PushStyleColor(ImGuiCol_FrameBg, ImColor(40, 40, 40, 255).Value);
+								SetNextItemWidth(GetContentRegionAvail().x - H::Draw.Scale(4));
+								
+								char buffer[256];
+								strncpy(buffer, editingMessage.c_str(), sizeof(buffer) - 1);
+								buffer[sizeof(buffer) - 1] = '\0';
+								
+								if (InputText("##EditMessage", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue))
+								{
+									Vars::Misc::Chatspam::Messages.Value[i] = buffer;
+									editingIndex = -1;
+								}
+								PopStyleColor();
+								PopStyleVar();
+								PopID();
+							}
+							else
+							{
+								PushStyleColor(ImGuiCol_Text, ImColor(220, 220, 220, 255).Value);
+								TextWrapped("%s", Vars::Misc::Chatspam::Messages.Value[i].c_str());
+								PopStyleColor();
+							}
+							
+							TableSetColumnIndex(1);
+							PushID(i);
+							
+							PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(H::Draw.Scale(4), H::Draw.Scale(3)));
+							PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(H::Draw.Scale(4), H::Draw.Scale(3)));
+							
+							if (editingIndex == i)
+							{
+								PushStyleColor(ImGuiCol_Button, ImColor(60, 140, 60, 200).Value);
+								PushStyleColor(ImGuiCol_ButtonHovered, ImColor(80, 170, 80, 255).Value);
+								PushStyleColor(ImGuiCol_ButtonActive, ImColor(50, 120, 50, 255).Value);
+								
+								if (Button("Save"))
+								{
+									Vars::Misc::Chatspam::Messages.Value[i] = editingMessage;
+									editingIndex = -1;
+								}
+								
+								PopStyleColor(3);
+							}
+							else
+							{
+								PushStyleColor(ImGuiCol_Button, ImColor(60, 120, 180, 200).Value);
+								PushStyleColor(ImGuiCol_ButtonHovered, ImColor(80, 140, 200, 255).Value);
+								PushStyleColor(ImGuiCol_ButtonActive, ImColor(50, 100, 150, 255).Value);
+								
+								if (Button("Edit"))
+								{
+									editingIndex = i;
+									editingMessage = Vars::Misc::Chatspam::Messages.Value[i];
+								}
+								
+								PopStyleColor(3);
+								SameLine();
+								
+								PushStyleColor(ImGuiCol_Button, ImColor(180, 60, 60, 200).Value);
+								PushStyleColor(ImGuiCol_ButtonHovered, ImColor(210, 80, 80, 255).Value);
+								PushStyleColor(ImGuiCol_ButtonActive, ImColor(150, 40, 40, 255).Value);
+								
+								if (Button("X"))
+								{
+									Vars::Misc::Chatspam::Messages.Value.erase(Vars::Misc::Chatspam::Messages.Value.begin() + i);
+									i--;
+								}
+								
+								PopStyleColor(3);
+							}
+							
+							PopStyleVar(2);
+							PopID();
+						}
+						EndTable();
+					}
+					
+					PopStyleColor(5);
+					PopStyleVar();
+				}
+				else
+				{
+					PushStyleColor(ImGuiCol_Text, ImColor(180, 180, 180, 255).Value);
+					TextWrapped("No messages added yet. Add your first message above!");
+					PopStyleColor();
+				}
+			} EndSection();
+		}
+		break;
 	}
 }
 
