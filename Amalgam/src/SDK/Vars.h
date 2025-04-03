@@ -225,6 +225,8 @@ namespace Vars
 			CVarEnum(Modifiers, 0b0100000, NONE, Tapfire = 1 << 0, WaitForHeadshot = 1 << 1, WaitForCharge = 1 << 2, ScopedOnly = 1 << 3, AutoScope = 1 << 4, AutoRev = 1 << 5, ExtinguishTeam = 1 << 6)
 			CVar(PointScale, 0.f)
 			CVar(TapFireDist, 1000.f)
+			CVar(AutoScopeDistance, 2000.f)
+			CVar(AutoRevDistance, 1500.f)
 
 			CVar(BoneSizeSubtract, 1.f, DEBUGVAR)
 			CVar(BoneSizeMinimumScale, 1.f, DEBUGVAR)

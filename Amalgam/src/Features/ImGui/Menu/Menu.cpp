@@ -199,6 +199,16 @@ void CMenu::MenuAimbot(int iTab)
 					FSlider("Tapfire distance", Vars::Aimbot::Hitscan::TapFireDist, 250.f, 1000.f, 50.f, "%g", FSlider_Min | FSlider_Precision);
 				}
 				PopTransparent();
+				PushTransparent(!(FGet(Vars::Aimbot::Hitscan::Modifiers) & Vars::Aimbot::Hitscan::ModifiersEnum::AutoScope));
+				{
+					FSlider("Auto scope distance", Vars::Aimbot::Hitscan::AutoScopeDistance, 200.f, 6000.f, 100.f, "%g", FSlider_Min | FSlider_Precision);
+				}
+				PopTransparent();
+				PushTransparent(!(FGet(Vars::Aimbot::Hitscan::Modifiers) & Vars::Aimbot::Hitscan::ModifiersEnum::AutoRev));
+				{
+					FSlider("Auto rev distance", Vars::Aimbot::Hitscan::AutoRevDistance, 200.f, 6000.f, 100.f, "%g", FSlider_Min | FSlider_Precision);
+				}
+				PopTransparent();
 			} EndSection();
 			if (Vars::Debug::Options.Value)
 			{

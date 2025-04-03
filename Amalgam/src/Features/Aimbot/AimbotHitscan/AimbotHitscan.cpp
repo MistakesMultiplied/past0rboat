@@ -761,7 +761,24 @@ void CAimbotHitscan::Run(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pC
 	{
 	case TF_WEAPON_MINIGUN:
 		if (Vars::Aimbot::Hitscan::Modifiers.Value & Vars::Aimbot::Hitscan::ModifiersEnum::AutoRev)
-			pCmd->buttons |= IN_ATTACK2;
+		{
+			bool shouldRev = false;
+			
+			for (auto pEntity : H::Entities.GetGroup(EGroupType::PLAYERS_ENEMIES))
+			{
+				if (F::AimbotGlobal.ShouldIgnore(pEntity, pLocal, pWeapon))
+					continue;
+
+				if (pLocal->GetAbsOrigin().DistTo(pEntity->GetAbsOrigin()) <= Vars::Aimbot::Hitscan::AutoRevDistance.Value)
+				{
+					shouldRev = true;
+					break;
+				}
+			}
+
+			if (shouldRev)
+				pCmd->buttons |= IN_ATTACK2;
+		}
 		if (pWeapon->As<CTFMinigun>()->m_iWeaponState() != AC_STATE_FIRING && pWeapon->As<CTFMinigun>()->m_iWeaponState() != AC_STATE_SPINNING)
 			return;
 		break;
@@ -776,10 +793,27 @@ void CAimbotHitscan::Run(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pC
 	{
 		const bool bScoped = pLocal->InCond(TF_COND_ZOOMED);
 
-		if (Vars::Aimbot::Hitscan::Modifiers.Value & Vars::Aimbot::Hitscan::ModifiersEnum::AutoScope && !bScoped)
+		if (Vars::Aimbot::Hitscan::Modifiers.Value & Vars::Aimbot::Hitscan::ModifiersEnum::AutoScope)
 		{
-			pCmd->buttons |= IN_ATTACK2;
-			return;
+			bool shouldScope = false;
+			
+			for (auto pEntity : H::Entities.GetGroup(EGroupType::PLAYERS_ENEMIES))
+			{
+				if (F::AimbotGlobal.ShouldIgnore(pEntity, pLocal, pWeapon))
+					continue;
+
+				if (pLocal->GetAbsOrigin().DistTo(pEntity->GetAbsOrigin()) <= Vars::Aimbot::Hitscan::AutoScopeDistance.Value)
+				{
+					shouldScope = true;
+					break;
+				}
+			}
+
+			if (shouldScope && !bScoped)
+			{
+				pCmd->buttons |= IN_ATTACK2;
+				return;
+			}
 		}
 
 		if (Vars::Aimbot::Hitscan::Modifiers.Value & Vars::Aimbot::Hitscan::ModifiersEnum::ScopedOnly && !bScoped)
