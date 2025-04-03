@@ -22,6 +22,7 @@ bool CTraceFilterHitscan::ShouldHitEntity(IHandleEntity* pServerEntity, int nCon
 		return iTargetTeam != iLocalTeam;
 	}
 	case ETFClassID::CTFPlayer:
+	case ETFClassID::CBaseObject:
 	case ETFClassID::CObjectSentrygun:
 	case ETFClassID::CObjectDispenser:
 	case ETFClassID::CObjectTeleporter: 
@@ -66,9 +67,11 @@ bool CTraceFilterProjectile::ShouldHitEntity(IHandleEntity* pServerEntity, int n
 	case ETFClassID::CBaseDoor:
 	case ETFClassID::CDynamicProp:
 	case ETFClassID::CPhysicsProp:
+	case ETFClassID::CPhysicsPropMultiplayer:
 	case ETFClassID::CObjectCartDispenser:
 	case ETFClassID::CFuncTrackTrain:
 	case ETFClassID::CFuncConveyor:
+	case ETFClassID::CBaseObject:
 	case ETFClassID::CObjectSentrygun:
 	case ETFClassID::CObjectDispenser:
 	case ETFClassID::CObjectTeleporter: return true;
@@ -84,8 +87,8 @@ bool CTraceFilterProjectile::ShouldHitEntity(IHandleEntity* pServerEntity, int n
 	{
 		auto pLocal = H::Entities.GetLocal();
 		auto pWeapon = H::Entities.GetWeapon();
-		const bool bCrossbow = (pLocal && pLocal == pSkip && pWeapon) ? pWeapon->GetWeaponID() == TF_WEAPON_CROSSBOW : false;
-		if (bCrossbow)
+		const bool bHeal = (pLocal && pLocal == pSkip && pWeapon) ? pWeapon->GetWeaponID() == TF_WEAPON_CROSSBOW || pWeapon->GetWeaponID() == TF_WEAPON_LUNCHBOX : false;
+		if (bHeal)
 			return true;
 		const int iTargetTeam = pEntity->m_iTeamNum(), iLocalTeam = pLocal ? pLocal->m_iTeamNum() : iTargetTeam;
 		return iTargetTeam != iLocalTeam;
@@ -112,6 +115,7 @@ bool CTraceFilterWorldAndPropsOnly::ShouldHitEntity(IHandleEntity* pServerEntity
 	case ETFClassID::CBaseDoor:
 	case ETFClassID::CDynamicProp:
 	case ETFClassID::CPhysicsProp:
+	case ETFClassID::CPhysicsPropMultiplayer:
 	case ETFClassID::CObjectCartDispenser:
 	case ETFClassID::CFuncTrackTrain:
 	case ETFClassID::CFuncConveyor: return true;
@@ -126,11 +130,14 @@ bool CTraceFilterWorldAndPropsOnly::ShouldHitEntity(IHandleEntity* pServerEntity
 		}
 	}
 
+	if (pServerEntity->GetRefEHandle().GetSerialNumber() == (1 << 15))
+		return I::ClientEntityList->GetClientEntity(0) != pSkip;
+
 	return false;
 }
 TraceType_t CTraceFilterWorldAndPropsOnly::GetTraceType() const
 {
-	return TRACE_EVERYTHING;
+	return TRACE_EVERYTHING_FILTER_PROPS;
 }
 
 #define MOVEMENT_COLLISION_GROUP 8

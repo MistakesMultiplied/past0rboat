@@ -9,7 +9,7 @@ MAKE_HOOK(IVModelRender_ForcedMaterialOverride, U::Memory.GetVFunc(I::ModelRende
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::IVModelRender_ForcedMaterialOverride.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::IVModelRender_ForcedMaterialOverride[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, mat, type);
 #endif
 	if (F::Chams.bRendering || F::Glow.bRendering)

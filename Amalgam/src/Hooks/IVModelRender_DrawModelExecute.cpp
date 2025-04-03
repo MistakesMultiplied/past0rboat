@@ -14,7 +14,7 @@ MAKE_HOOK(IVModelRender_DrawModelExecute, U::Memory.GetVFunc(I::ModelRender, 19)
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::IVModelRender_DrawModelExecute.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::IVModelRender_DrawModelExecute[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, pState, pInfo, pBoneToWorld);
 #endif
 	/*
@@ -59,7 +59,7 @@ MAKE_HOOK(CBaseAnimating_DrawModel, S::CBaseAnimating_DrawModel(), int,
 	void* rcx, int flags)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::IVModelRender_DrawModelExecute.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::IVModelRender_DrawModelExecute[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, flags);
 #endif
 	static const auto dwDrawModel = S::CEconEntity_DrawOverriddenViewmodel_DrawModel_Call();
@@ -79,7 +79,7 @@ MAKE_HOOK(CBaseAnimating_InternalDrawModel, S::CBaseAnimating_InternalDrawModel(
 	void* rcx, int flags)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::IVModelRender_DrawModelExecute.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::IVModelRender_DrawModelExecute[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, flags);
 #endif
 	if (!bDrawingViewmodel || !(flags & STUDIO_RENDER))

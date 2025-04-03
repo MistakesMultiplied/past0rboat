@@ -36,8 +36,8 @@ static inline bool GetPlayerGlow(CBaseEntity* pEntity, CTFPlayer* pLocal, Glow_t
 
 	if (bTeam ? Vars::Glow::Friendly::Dist2Alpha.Value : Vars::Glow::Enemy::Dist2Alpha.Value)
 	{
-		pColor->a = Math::RemapValClamped(flDistance, (bTeam ? Vars::Glow::Friendly::MaxDist.Value : Vars::Glow::Enemy::MaxDist.Value) - 256.f, (bTeam ? Vars::Glow::Friendly::MaxDist.Value : Vars::Glow::Enemy::MaxDist.Value), pColor->a, 0.f);
-		pColor->a = Math::RemapValClamped(flDistance, (bTeam ? Vars::Glow::Friendly::MinDist.Value : Vars::Glow::Enemy::MinDist.Value) + 256.f, (bTeam ? Vars::Glow::Friendly::MinDist.Value : Vars::Glow::Enemy::MinDist.Value), pColor->a, 0.f);
+		pColor->a = Math::RemapVal(flDistance, (bTeam ? Vars::Glow::Friendly::MaxDist.Value : Vars::Glow::Enemy::MaxDist.Value) - 256.f, (bTeam ? Vars::Glow::Friendly::MaxDist.Value : Vars::Glow::Enemy::MaxDist.Value), pColor->a, 0.f);
+		pColor->a = Math::RemapVal(flDistance, (bTeam ? Vars::Glow::Friendly::MinDist.Value : Vars::Glow::Enemy::MinDist.Value) + 256.f, (bTeam ? Vars::Glow::Friendly::MinDist.Value : Vars::Glow::Enemy::MinDist.Value), pColor->a, 0.f);
 	}
 
 	return bTeam ? bFriendly : bEnemy;
@@ -48,8 +48,8 @@ static inline void ApplyDistanceAlphaMod(byte* pAlpha, float flDistance, float f
 	if (!bActive)
 		return;
 
-	*pAlpha = Math::RemapValClamped(flDistance, flMaxDistance - 256.f, flMaxDistance, *pAlpha, 0.f);
-	*pAlpha = Math::RemapValClamped(flDistance, flMinDistance + 256.f, flMinDistance, *pAlpha, 0.f);
+	*pAlpha = Math::RemapVal(flDistance, flMaxDistance - 256.f, flMaxDistance, *pAlpha, 0.f);
+	*pAlpha = Math::RemapVal(flDistance, flMinDistance + 256.f, flMinDistance, *pAlpha, 0.f);
 }
 
 bool CGlow::GetGlow(CTFPlayer* pLocal, CBaseEntity* pEntity, Glow_t* pGlow, Color_t* pColor)
@@ -454,7 +454,7 @@ void CGlow::Store(CTFPlayer* pLocal)
 				if (pWeapon && G::PrimaryWeaponType != EWeaponType::PROJECTILE)
 				{
 					bool bShowFriendly = false, bShowEnemy = true;
-					if (pWeapon->m_iItemDefinitionIndex() == Soldier_t_TheDisciplinaryAction)
+					if (G::PrimaryWeaponType == EWeaponType::MELEE && SDK::AttribHookValue(0, "speed_buff_ally", pWeapon) > 0)
 						bShowFriendly = true;
 					if (pWeapon->GetWeaponID() == TF_WEAPON_MEDIGUN)
 						bShowFriendly = true, bShowEnemy = false;
@@ -462,7 +462,7 @@ void CGlow::Store(CTFPlayer* pLocal)
 					if (bShowFriendly && pEntity->m_iTeamNum() == pLocal->m_iTeamNum() || bShowEnemy && pEntity->m_iTeamNum() != pLocal->m_iTeamNum())
 					{
 						tGlow = Glow_t(Vars::Glow::Backtrack::Stencil.Value, Vars::Glow::Backtrack::Blur.Value);
-						mvEntities[tGlow].emplace_back(pEntity, tColor, true);
+						mvEntities[tGlow].emplace_back(pEntity, Vars::Colors::Backtrack.Value.a ? Vars::Colors::Backtrack.Value : tColor, true);
 					}
 				}
 			}
@@ -471,7 +471,7 @@ void CGlow::Store(CTFPlayer* pLocal)
 			if (Vars::Glow::FakeAngle::Enabled.Value && (Vars::Glow::FakeAngle::Stencil.Value || Vars::Glow::FakeAngle::Blur.Value) && pEntity == pLocal && F::FakeAngle.bDrawChams && F::FakeAngle.bBonesSetup)
 			{
 				tGlow = Glow_t(Vars::Glow::FakeAngle::Stencil.Value, Vars::Glow::FakeAngle::Blur.Value);
-				mvEntities[tGlow].emplace_back(pEntity, tColor, true);
+				mvEntities[tGlow].emplace_back(pEntity, Vars::Colors::FakeAngle.Value.a ? Vars::Colors::FakeAngle.Value : tColor, true);
 			}
 		}
 	}

@@ -52,6 +52,7 @@ private:
 	std::vector<Vector> m_vSniperSpots;
 	std::vector<Vector>  m_vBuildingSpots;
 	std::optional<Vector> vCurrentBuildingSpot;
+	std::unordered_map<int, bool> m_mAutoScopeCache;
 	int m_iMySentryIdx = -1;
 	int m_iMyDispenserIdx = -1;
 	int m_iBuildAttempts = 0;

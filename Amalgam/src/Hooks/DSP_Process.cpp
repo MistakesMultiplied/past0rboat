@@ -7,7 +7,7 @@ MAKE_HOOK(DSP_Process, S::DSP_Process(), void,
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::DSP_Process.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::DSP_Process[DEFAULT_BIND])
 		return CALL_ORIGINAL(idsp, pbfront, pbrear, pbcenter, sampleCount);
 #endif
 	if (!Vars::Misc::Sound::RemoveDSP.Value)

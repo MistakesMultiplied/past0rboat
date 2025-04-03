@@ -9,6 +9,24 @@
 #include "../Features/Visuals/Visuals.h"
 #include "../Features/Misc/NamedPipe/NamedPipe.h"
 #include "../SDK/Events/Events.h"
+#include <Psapi.h>
+
+static inline std::string GetProcessName(DWORD dwProcessID)
+{
+	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dwProcessID);
+	if (!hProcess)
+		return "";
+
+	char buffer[MAX_PATH];
+	if (!GetModuleBaseName(hProcess, nullptr, buffer, sizeof(buffer) / sizeof(char)))
+	{
+		CloseHandle(hProcess);
+		return "";
+	}
+
+	CloseHandle(hProcess);
+	return buffer;
+}
 
 static inline bool CheckDXLevel()
 {
@@ -30,20 +48,30 @@ void CCore::AppendFailText(const char* sMessage)
 	OutputDebugStringA(std::format("{}\n", sMessage).c_str());
 }
 
-
 void CCore::Load()
 {
-	if (m_bUnload = m_bFailed = !SDK::GetTeamFortressWindow())
+	if (m_bUnload = m_bFailed = FNV1A::Hash32(GetProcessName(GetCurrentProcessId()).c_str()) != FNV1A::Hash32Const("tf_win64.exe"))
 	{
-		AppendFailText("Game window not found");
+		AppendFailText("Invalid process");
 		return;
 	}
+
+	float flStart = SDK::PlatFloatTime();
+#ifndef TEXTMODE
+	while (!U::Memory.FindSignature("client.dll", "48 8B 0D ? ? ? ? 48 8B 10 48 8B 19 48 8B C8 FF 92") || !SDK::GetTeamFortressWindow())
+#else
 	while (!U::Memory.FindSignature("client.dll", "48 8B 0D ? ? ? ? 48 8B 10 48 8B 19 48 8B C8 FF 92"))
+#endif
 	{
 		Sleep(500);
+		if (m_bUnload = m_bFailed = SDK::PlatFloatTime() - flStart > 60.f)
+		{
+			AppendFailText("Failed to load");
+			return;
+		}
 		if (m_bUnload = m_bFailed = U::KeyHandler.Down(VK_F11, true))
 		{
-			U::Core.AppendFailText("Cancelled load");
+			AppendFailText("Cancelled load");
 			return;
 		}
 	}

@@ -9,7 +9,7 @@ MAKE_HOOK(CBaseHudChatLine_InsertAndColorizeText, S::CBaseHudChatLine_InsertAndC
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CBaseHudChatLine_InsertAndColorizeText.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CBaseHudChatLine_InsertAndColorizeText[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, buf, clientIndex);
 #endif
 	std::string sMessage = SDK::ConvertWideToUTF8(buf);

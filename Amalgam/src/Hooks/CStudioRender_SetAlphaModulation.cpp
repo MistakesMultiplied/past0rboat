@@ -5,7 +5,7 @@ MAKE_HOOK(CStudioRender_SetAlphaModulation, U::Memory.GetVFunc(I::StudioRender, 
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CStudioRender_SetAlphaModulation.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CStudioRender_SetAlphaModulation[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, flAlpha);
 #endif
 

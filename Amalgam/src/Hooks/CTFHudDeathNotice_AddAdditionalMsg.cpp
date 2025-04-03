@@ -11,7 +11,7 @@ MAKE_HOOK(CTFHudDeathNotice_AddAdditionalMsg, S::CTFHudDeathNotice_AddAdditional
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFHudDeathNotice_AddAdditionalMsg.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFHudDeathNotice_AddAdditionalMsg[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, iKillerID, iVictimID, pMsgKey);
 #endif
 
@@ -62,7 +62,7 @@ MAKE_HOOK(CLocalizedStringTable_Find, S::CLocalizedStringTable_Find(), wchar_t*,
 	void* rcx, const char* pName)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFHudDeathNotice_AddAdditionalMsg.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFHudDeathNotice_AddAdditionalMsg[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, pName);
 #endif
 

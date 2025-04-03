@@ -7,7 +7,7 @@ MAKE_HOOK(CViewRender_RenderView, U::Memory.GetVFunc(I::ViewRender, 6), void,
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CViewRender_RenderView.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CViewRender_RenderView[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, view, nClearFlags, whatToDraw);
 #endif
 

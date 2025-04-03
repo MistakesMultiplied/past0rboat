@@ -211,6 +211,7 @@
     <ClCompile Include="src\Hooks\CParticleProperty_Create.cpp" />
     <ClCompile Include="src\Hooks\IEngineVGui_Paint.cpp" />
     <ClCompile Include="src\Hooks\CBuf_ExecuteCommand.cpp" />
+    <ClCompile Include="src\Hooks\IEngineTrace_SetTraceEntity.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\UtlVector\UtlVector.h" />

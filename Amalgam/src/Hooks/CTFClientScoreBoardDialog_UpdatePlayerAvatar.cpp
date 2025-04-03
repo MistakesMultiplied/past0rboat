@@ -16,7 +16,7 @@ MAKE_HOOK(CTFClientScoreBoardDialog_UpdatePlayerAvatar, S::CTFClientScoreBoardDi
 	void* rcx, int playerIndex, KeyValues* kv)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFClientScoreBoardDialog_UpdatePlayerAvatar.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFClientScoreBoardDialog_UpdatePlayerAvatar[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, playerIndex, kv);
 #endif
 	CTFClientScoreBoardDialog_UpdatePlayerList_PlayerIndex = playerIndex;
@@ -30,7 +30,7 @@ MAKE_HOOK(CTFMatchSummary_UpdatePlayerAvatar, S::CTFMatchSummary_UpdatePlayerAva
 	void* rcx, int playerIndex, KeyValues* kv)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFClientScoreBoardDialog_UpdatePlayerAvatar.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFClientScoreBoardDialog_UpdatePlayerAvatar[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, playerIndex, kv);
 #endif
 	int iType = 0; F::PlayerUtils.GetPlayerName(playerIndex, nullptr, &iType);
@@ -42,7 +42,7 @@ MAKE_HOOK(CTFHudMannVsMachineScoreboard_UpdatePlayerAvatar, S::CTFHudMannVsMachi
 	void* rcx, int playerIndex, KeyValues* kv)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFClientScoreBoardDialog_UpdatePlayerAvatar.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFClientScoreBoardDialog_UpdatePlayerAvatar[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, playerIndex, kv);
 #endif
 
@@ -55,7 +55,7 @@ MAKE_HOOK(CTFHudMatchStatus_UpdatePlayerAvatar, S::CTFHudMatchStatus_UpdatePlaye
 	void* rcx, int playerIndex, KeyValues* kv)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFClientScoreBoardDialog_UpdatePlayerAvatar.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFClientScoreBoardDialog_UpdatePlayerAvatar[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, playerIndex, kv);
 #endif
 
@@ -68,7 +68,7 @@ MAKE_HOOK(SectionedListPanel_SetItemFgColor, S::SectionedListPanel_SetItemFgColo
 	void* rcx, int itemID, Color_t color)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFClientScoreBoardDialog_UpdatePlayerAvatar.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFClientScoreBoardDialog_UpdatePlayerAvatar[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, itemID, color);
 #endif
 	static const auto dwDesired = S::CTFClientScoreBoardDialog_UpdatePlayerList_SetItemFgColor_Call();

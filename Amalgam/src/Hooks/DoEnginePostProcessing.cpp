@@ -7,7 +7,7 @@ MAKE_HOOK(DoEnginePostProcessing, S::DoEnginePostProcessing(), void,
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::DoEnginePostProcessing.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::DoEnginePostProcessing[DEFAULT_BIND])
 		return CALL_ORIGINAL(x, y, w, h, bFlashlightIsOn, bPostVGui);
 #endif
 	if (!Vars::Visuals::Removals::PostProcessing.Value || Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())

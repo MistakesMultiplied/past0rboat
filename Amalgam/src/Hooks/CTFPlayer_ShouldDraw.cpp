@@ -14,7 +14,7 @@ MAKE_HOOK(CTFPlayer_ShouldDraw, S::CTFPlayer_ShouldDraw(), bool,
 	return false;
 #else
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFPlayer_ShouldDraw.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFPlayer_ShouldDraw[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx);
 #endif
 	auto pLocal = H::Entities.GetLocal();
@@ -32,7 +32,7 @@ MAKE_HOOK(CBasePlayer_ShouldDrawThisPlayer, S::CBasePlayer_ShouldDrawThisPlayer(
 	return false;
 #else
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFPlayer_ShouldDraw.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFPlayer_ShouldDraw[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx);
 #endif
 	static const auto dwUndesired = S::CBasePlayer_BuildFirstPersonMeathookTransformations_ShouldDrawThisPlayer_Call();
@@ -55,7 +55,7 @@ MAKE_HOOK(CViewRender_DrawViewModels, S::CViewRender_DrawViewModels(), void,
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFPlayer_ShouldDraw.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFPlayer_ShouldDraw[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, viewRender, drawViewmodel);
 #endif
 	CALL_ORIGINAL(rcx, viewRender, F::Spectate.m_iTarget != -1 ? false : drawViewmodel);

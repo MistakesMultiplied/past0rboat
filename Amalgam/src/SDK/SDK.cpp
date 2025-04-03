@@ -3,19 +3,21 @@
 #include "../Features/EnginePrediction/EnginePrediction.h"
 #include "../Features/Visuals/Notifications/Notifications.h"
 #include "../Features/ImGui/Menu/Menu.h"
+#include "../Features/Configs/Configs.h"
 #include <random>
+#include <fstream>
 
 #pragma warning (disable : 6385)
 
-static BOOL CALLBACK TeamFortressWindow(HWND hwnd, LPARAM lParam)
+static BOOL CALLBACK TeamFortressWindow(HWND hWindow, LPARAM lParam)
 {
 	char windowTitle[1024];
-	GetWindowTextA(hwnd, windowTitle, sizeof(windowTitle));
+	GetWindowTextA(hWindow, windowTitle, sizeof(windowTitle));
 	switch (FNV1A::Hash32(windowTitle))
 	{
 	case FNV1A::Hash32Const("Team Fortress 2 - Direct3D 9 - 64 Bit"):
 	case FNV1A::Hash32Const("Team Fortress 2 - Vulkan - 64 Bit"):
-		*reinterpret_cast<HWND*>(lParam) = hwnd;
+		*reinterpret_cast<HWND*>(lParam) = hWindow;
 	}
 
 	return TRUE;
@@ -103,15 +105,16 @@ std::string SDK::GetClipboard()
 
 HWND SDK::GetTeamFortressWindow()
 {
-	static HWND hwWindow = nullptr;
-	if (!hwWindow)
-		EnumWindows(TeamFortressWindow, reinterpret_cast<LPARAM>(&hwWindow));
-	return hwWindow;
+	static HWND hWindow = nullptr;
+	if (!hWindow)
+		EnumWindows(TeamFortressWindow, reinterpret_cast<LPARAM>(&hWindow));
+	return hWindow;
 }
 
 bool SDK::IsGameWindowInFocus()
 {
-	return GetForegroundWindow() == GetTeamFortressWindow();
+	HWND hWindow = GetTeamFortressWindow();
+	return hWindow == GetForegroundWindow() || !hWindow;
 }
 
 std::wstring SDK::ConvertUtf8ToWide(const std::string& source)
@@ -418,7 +421,6 @@ EWeaponType SDK::GetWeaponType(CTFWeaponBase* pWeapon, EWeaponType* pSecondaryTy
 	case TF_WEAPON_INVIS:
 	case TF_WEAPON_BUFF_ITEM:
 	case TF_WEAPON_GRAPPLINGHOOK:
-	case TF_WEAPON_LASER_POINTER:
 	case TF_WEAPON_ROCKETPACK:
 		return EWeaponType::UNKNOWN;
 	case TF_WEAPON_CLEAVER:
@@ -479,7 +481,7 @@ int SDK::IsAttacking(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, const CUserCmd* 
 		switch (pWeapon->GetWeaponID())
 		{
 		case TF_WEAPON_KNIFE:
-			return pCmd->buttons & IN_ATTACK && G::CanPrimaryAttack;
+			return G::CanPrimaryAttack && pCmd->buttons & IN_ATTACK;
 		case TF_WEAPON_BAT_WOOD:
 		case TF_WEAPON_BAT_GIFTWRAP:
 		{
@@ -506,7 +508,7 @@ int SDK::IsAttacking(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, const CUserCmd* 
 	case TF_WEAPON_GRENADE_STICKY_BALL:
 	{
 		float flCharge = pWeapon->As<CTFPipebombLauncher>()->m_flChargeBeginTime() > 0.f ? flTickBase - pWeapon->As<CTFPipebombLauncher>()->m_flChargeBeginTime() : 0.f;
-		const float flAmount = Math::RemapValClamped(flCharge, 0.f, SDK::AttribHookValue(4.f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f);
+		const float flAmount = Math::RemapVal(flCharge, 0.f, SDK::AttribHookValue(4.f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f);
 		return !(pCmd->buttons & IN_ATTACK) && flAmount > 0.f || flAmount == 1.f;
 	}
 	case TF_WEAPON_CANNON:
@@ -516,7 +518,7 @@ int SDK::IsAttacking(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, const CUserCmd* 
 			return G::CanPrimaryAttack && pCmd->buttons & IN_ATTACK ? 1 : G::Reloading && pCmd->buttons & IN_ATTACK ? 2 : 0;
 
 		float flCharge = pWeapon->As<CTFGrenadeLauncher>()->m_flDetonateTime() > 0.f ? flMortar - (pWeapon->As<CTFGrenadeLauncher>()->m_flDetonateTime() - flTickBase) : 0.f;
-		const float flAmount = Math::RemapValClamped(flCharge, 0.f, SDK::AttribHookValue(0.f, "grenade_launcher_mortar_mode", pWeapon), 0.f, 1.f);
+		const float flAmount = Math::RemapVal(flCharge, 0.f, SDK::AttribHookValue(0.f, "grenade_launcher_mortar_mode", pWeapon), 0.f, 1.f);
 		return !(pCmd->buttons & IN_ATTACK) && flAmount > 0.f || flAmount == 1.f;
 	}
 	case TF_WEAPON_SNIPERRIFLE_CLASSIC:
@@ -568,7 +570,7 @@ int SDK::IsAttacking(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, const CUserCmd* 
 		static auto tf_grapplinghook_max_distance = U::ConVars.FindVar("tf_grapplinghook_max_distance");
 		const float flGrappleDistance = tf_grapplinghook_max_distance ? tf_grapplinghook_max_distance->GetFloat() : 2000.f;
 		Trace(vPos, vPos + vForward * flGrappleDistance, MASK_SOLID, &filter, &trace);
-		return trace.DidHit() && !(trace.surface.flags & 0x0004 /*SURF_SKY*/);
+		return trace.DidHit() && !(trace.surface.flags & SURF_SKY);
 	}
 	case TF_WEAPON_MINIGUN:
 		switch (pWeapon->As<CTFMinigun>()->m_iWeaponState())
@@ -578,6 +580,10 @@ int SDK::IsAttacking(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, const CUserCmd* 
 			if (pWeapon->HasPrimaryAmmoForShot())
 				return G::CanPrimaryAttack && pCmd->buttons & IN_ATTACK ? 1 : G::Reloading && pCmd->buttons & IN_ATTACK ? 2 : 0;
 		}
+		return false;
+	case TF_WEAPON_LUNCHBOX:
+		if (G::PrimaryWeaponType == EWeaponType::PROJECTILE && G::CanSecondaryAttack && pWeapon->HasPrimaryAmmoForShot() && pCmd->buttons & IN_ATTACK2)
+			return 1;
 		return false;
 	case TF_WEAPON_FLAMETHROWER:
 	case TF_WEAPON_FLAME_BALL:
@@ -657,18 +663,18 @@ bool SDK::StopMovement(CTFPlayer* pLocal, CUserCmd* pCmd)
 
 	if (G::Attacking != 1)
 	{
-		const float direction = Math::VelocityToAngles(pLocal->m_vecVelocity() * -1).y;
-		pCmd->viewangles = { 90, direction, 0 };
+		float flDirection = Math::VelocityToAngles(pLocal->m_vecVelocity() * -1).y;
+		pCmd->viewangles = { 90, flDirection, 0 };
 		pCmd->sidemove = 0; pCmd->forwardmove = 0;
 		return true;
 	}
 	else
 	{
-		Vec3 direction = pLocal->m_vecVelocity().toAngle();
-		direction.y = pCmd->viewangles.y - direction.y;
-		const Vec3 negatedDirection = direction.fromAngle() * -pLocal->m_vecVelocity().Length2D();
-		pCmd->forwardmove = negatedDirection.x;
-		pCmd->sidemove = negatedDirection.y;
+		Vec3 vDirection = pLocal->m_vecVelocity().ToAngle();
+		vDirection.y = pCmd->viewangles.y - vDirection.y;
+		Vec3 vNegatedDirection = vDirection.FromAngle() * -pLocal->m_vecVelocity().Length2D();
+		pCmd->forwardmove = vNegatedDirection.x;
+		pCmd->sidemove = vNegatedDirection.y;
 		return false;
 	}
 }
@@ -817,7 +823,7 @@ float SDK::CalculateSplashRadiusDamageFalloff(CTFWeaponBase* pWeapon, CTFPlayer*
 float SDK::CalculateSplashRadiusDamage(CTFWeaponBase* pWeapon, CTFPlayer* pAttacker, CTFWeaponBaseGrenadeProj* pProjectile, float flRadius, float flDist, float& flDamageNoBuffs, bool bSelf)
 {
 	float flFalloff{ CalculateSplashRadiusDamageFalloff(pWeapon, pAttacker, pProjectile, flRadius) };
-	float flDamage{ Math::RemapValClamped(flDist, 0.f, flRadius, pProjectile->m_flDamage(), pProjectile->m_flDamage() * flFalloff) };
+	float flDamage{ Math::RemapVal(flDist, 0.f, flRadius, pProjectile->m_flDamage(), pProjectile->m_flDamage() * flFalloff) };
 	flDamageNoBuffs = flDamage;
 
 	bool bCrit{ (pProjectile->GetDamageType() & DMG_CRITICAL) > 0 };

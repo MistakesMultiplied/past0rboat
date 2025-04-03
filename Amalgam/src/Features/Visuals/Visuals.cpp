@@ -29,6 +29,10 @@ void CVisuals::DrawFOV(CTFPlayer* pLocal)
 	if (!Vars::Aimbot::General::FOVCircle.Value || !Vars::Colors::FOVCircle.Value.a || !pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->IsTaunting() || pLocal->InCond(TF_COND_STUNNED) && pLocal->m_iStunFlags() & (TF_STUN_CONTROLS | TF_STUN_LOSER_STATE) || pLocal->InCond(TF_COND_HALLOWEEN_KART))
 		return;
 
+	auto pWeapon = H::Entities.GetWeapon();
+	if (pWeapon && SDK::AttribHookValue(1, "mult_dmg", pWeapon) == 0)
+		return;
+
 	if (Vars::Aimbot::General::AimFOV.Value >= 90.f)
 		return;
 
@@ -309,6 +313,8 @@ void CVisuals::ProjectileTrace(CTFPlayer* pPlayer, CTFWeaponBase* pWeapon, const
 		if (trace.DidHit())
 		{
 			pNormal = &trace.plane.normal;
+			if (n == 1 && trace.startsolid)
+				*pNormal = F::ProjSim.GetVelocity().Normalized();
 			break;
 		}
 	}
@@ -337,9 +343,12 @@ void CVisuals::ProjectileTrace(CTFPlayer* pPlayer, CTFWeaponBase* pWeapon, const
 		case TF_WEAPON_GRENADELAUNCHER:
 			if (Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Pipes)
 				flRadius = 146.f;
+			break;
+		case TF_WEAPON_FLAREGUN:
+		case TF_WEAPON_FLAREGUN_REVENGE:
+			if (Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::ScorchShot && pWeapon->As<CTFFlareGun>()->GetFlareGunType() == FLAREGUN_SCORCHSHOT)
+				flRadius = 110.f;
 		}
-		if (!flRadius && pWeapon->m_iItemDefinitionIndex() == Pyro_s_TheScorchShot && Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::ScorchShot)
-			flRadius = 110.f;
 
 		if (flRadius)
 		{
@@ -383,7 +392,7 @@ void CVisuals::ProjectileTrace(CTFPlayer* pPlayer, CTFWeaponBase* pWeapon, const
 
 			if (Vars::Visuals::Simulation::Box.Value && pNormal)
 			{
-				const float flSize = std::max(tProjInfo.m_vHull.x, 1.f);
+				const float flSize = std::max(tProjInfo.m_vHull.Min(), 1.f);
 				const Vec3 vSize = { 1.f, flSize, flSize };
 				Vec3 vAngles; Math::VectorAngles(*pNormal, vAngles);
 
@@ -404,7 +413,9 @@ void CVisuals::ProjectileTrace(CTFPlayer* pPlayer, CTFWeaponBase* pWeapon, const
 	}
 	else if (Vars::Visuals::Simulation::ShotPath.Value)
 	{
+		G::BoxStorage.clear();
 		G::PathStorage.clear();
+
 		if (Vars::Colors::ShotPath.Value.a)
 			G::PathStorage.emplace_back(tProjInfo.m_vPath, -float(tProjInfo.m_vPath.size()) - TIME_TO_TICKS(F::Backtrack.GetReal()), Vars::Colors::ShotPath.Value, Vars::Visuals::Simulation::ShotPath.Value);
 		if (Vars::Colors::ShotPathClipped.Value.a)
@@ -416,8 +427,6 @@ void CVisuals::ProjectileTrace(CTFPlayer* pPlayer, CTFWeaponBase* pWeapon, const
 			const Vec3 vSize = { 1.f, flSize, flSize };
 			Vec3 vAngles; Math::VectorAngles(*pNormal, vAngles);
 
-			if (Vars::Colors::ShotPath.Value.a || Vars::Colors::TrajectoryPathClipped.Value.a)
-				G::BoxStorage.clear();
 			if (Vars::Colors::ShotPath.Value.a)
 				G::BoxStorage.emplace_back(trace.endpos, vSize * -1, vSize, vAngles, I::GlobalVars->curtime + TICKS_TO_TIME(tProjInfo.m_vPath.size()) + F::Backtrack.GetReal(), Vars::Colors::ShotPath.Value, Color_t(0, 0, 0, 0));
 			if (Vars::Colors::ShotPathClipped.Value.a)
@@ -463,7 +472,7 @@ void CVisuals::SplashRadius(CTFPlayer* pLocal)
 			if (Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::ScorchShot)
 			{
 				pWeapon = pEntity->As<CTFProjectile_Flare>()->m_hLauncher().Get()->As<CTFWeaponBase>();
-				bShouldDraw = pWeapon && pWeapon->m_iItemDefinitionIndex() == ETFWeapons::Pyro_s_TheScorchShot;
+				bShouldDraw = pWeapon && pWeapon->As<CTFFlareGun>()->GetFlareGunType() == FLAREGUN_SCORCHSHOT;
 			}
 		}
 		if (!bShouldDraw)
@@ -968,18 +977,29 @@ void CVisuals::RenderBox(const Vec3& vPos, const Vec3& vMins, const Vec3& vMaxs,
 
 void CVisuals::FOV(CTFPlayer* pLocal, CViewSetup* pView)
 {
-	int iFOV = pLocal->InCond(TF_COND_ZOOMED) ? Vars::Visuals::UI::ZoomFieldOfView.Value : Vars::Visuals::UI::FieldOfView.Value;
-	pView->fov = pLocal->m_iFOV() = iFOV ? iFOV : pView->fov;
+	bool bZoomed = pLocal->InCond(TF_COND_ZOOMED);
+	static auto fov_desired = U::ConVars.FindVar("fov_desired");
+	float flDefaultFOV = fov_desired->GetFloat();
+	float flRegularOverride = Vars::Visuals::UI::FieldOfView.Value;
+	float flZoomOverride = Vars::Visuals::UI::ZoomFieldOfView.Value;
+	float flDesiredFOV = !bZoomed ? flRegularOverride : flZoomOverride;
 
-	int iDefault = Vars::Visuals::UI::FieldOfView.Value;
-	if (!iDefault)
+	pView->fov = pLocal->m_iFOV() = flDesiredFOV ? flDesiredFOV : pView->fov;
+	pLocal->m_iDefaultFOV() = std::max(flRegularOverride, flDefaultFOV);
+
+	if (!I::Prediction->InPrediction() && (flRegularOverride || flZoomOverride))
 	{
-		static auto fov_desired = U::ConVars.FindVar("fov_desired");
-		if (!fov_desired)
-			return;
-		iDefault = fov_desired->GetInt();
+		float flDeltaTime = (TICKS_TO_TIME(pLocal->m_nFinalPredictedTick()) - pLocal->m_flFOVTime() + TICKS_TO_TIME(I::GlobalVars->interpolation_amount)) / pLocal->m_flFOVRate();
+		if (flDeltaTime < 1.f)
+		{
+			float flRegular = flRegularOverride ? flRegularOverride : flDefaultFOV;
+			float flZoomed = flZoomOverride ? flZoomOverride : 20.f;
+
+			float flFrom = !bZoomed ? flZoomed : flRegular;
+			float flTo = !bZoomed ? flRegular : flZoomed;
+			pView->fov = pLocal->m_iFOV() = Math::SimpleSplineRemapVal(flDeltaTime, 0.f, 1.f, flFrom, flTo);
+		}
 	}
-	pLocal->m_iDefaultFOV() = iDefault;
 }
 
 void CVisuals::ThirdPerson(CTFPlayer* pLocal, CViewSetup* pView)
@@ -1183,24 +1203,30 @@ void CVisuals::OverrideWorldTextures()
 		return;
 
 	KeyValues* kv = new KeyValues("LightmappedGeneric");
-	if (uHash == FNV1A::Hash32Const("Dev"))
-		kv->SetString("$basetexture", "dev/dev_measuregeneric01b");
-	else if (uHash == FNV1A::Hash32Const("Camo"))
-		kv->SetString("$basetexture", "patterns/paint_strokes");
-	else if (uHash == FNV1A::Hash32Const("Black"))
-		kv->SetString("$basetexture", "patterns/combat/black");
-	else if (uHash == FNV1A::Hash32Const("White"))
-		kv->SetString("$basetexture", "patterns/combat/white");
-	else if (uHash == FNV1A::Hash32Const("Flat"))
-	{
-		kv->SetString("$basetexture", "vgui/white_additive");
-		kv->SetString("$color2", "[0.12 0.12 0.15]");
-	}
-	else
-		kv->SetString("$basetexture", Vars::Visuals::World::WorldTexture.Value.c_str());
-
 	if (!kv)
 		return;
+
+	switch (uHash)
+	{
+	case FNV1A::Hash32Const("Dev"):
+		kv->SetString("$basetexture", "dev/dev_measuregeneric01b");
+		break;
+	case FNV1A::Hash32Const("Camo"):
+		kv->SetString("$basetexture", "patterns/paint_strokes");
+		break;
+	case FNV1A::Hash32Const("Black"):
+		kv->SetString("$basetexture", "patterns/combat/black");
+		break;
+	case FNV1A::Hash32Const("White"):
+		kv->SetString("$basetexture", "patterns/combat/white");
+		break;
+	case FNV1A::Hash32Const("Flat"):
+		kv->SetString("$basetexture", "vgui/white_additive");
+		kv->SetString("$color2", "[0.12 0.12 0.15]");
+		break;
+	default:
+		kv->SetString("$basetexture", Vars::Visuals::World::WorldTexture.Value.c_str());
+	}
 
 	for (auto h = I::MaterialSystem->FirstMaterial(); h != I::MaterialSystem->InvalidMaterial(); h = I::MaterialSystem->NextMaterial(h))
 	{
@@ -1208,8 +1234,8 @@ void CVisuals::OverrideWorldTextures()
 		if (!pMaterial || pMaterial->IsErrorMaterial() || !pMaterial->IsPrecached() || pMaterial->IsTranslucent() || pMaterial->IsSpriteCard())
 			continue;
 
-		auto sGroup = std::string_view(pMaterial->GetTextureGroupName());
-		auto sName = std::string_view(pMaterial->GetName());
+		std::string_view sGroup = pMaterial->GetTextureGroupName();
+		std::string_view sName = pMaterial->GetName();
 
 		if (!sGroup._Starts_with("World")
 			|| sName.find("water") != std::string_view::npos || sName.find("glass") != std::string_view::npos

@@ -2480,13 +2480,26 @@ void CNavBot::UpdateSlot(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, ClosestEnemy
 void CNavBot::AutoScope(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCmd)
 {
 	static bool bKeep = false;
+	static bool bShouldClearCache = false;
 	static Timer tScopeTimer{};
 	bool bIsClassic = pWeapon->GetWeaponID() == TF_WEAPON_SNIPERRIFLE_CLASSIC;
 	if (!Vars::Misc::Movement::NavBot::AutoScope.Value || pWeapon->GetWeaponID() != TF_WEAPON_SNIPERRIFLE && !bIsClassic && pWeapon->GetWeaponID() != TF_WEAPON_SNIPERRIFLE_DECAP)
 	{
 		bKeep = false;
+		m_mAutoScopeCache.clear();
 		return;
 	}
+
+	if (!Vars::Misc::Movement::NavBot::AutoScopeUseCachedResults.Value)
+		bShouldClearCache = true;
+
+	if (bShouldClearCache)
+	{
+		m_mAutoScopeCache.clear();
+		bShouldClearCache = false;
+	}
+	else if (m_mAutoScopeCache.size())
+		bShouldClearCache = true;
 
 	if (bIsClassic)
 	{
@@ -2557,7 +2570,7 @@ void CNavBot::AutoScope(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCm
 
 	std::sort(vEnemiesSorted.begin(), vEnemiesSorted.end(), [&](std::pair<CBaseEntity*, float> a, std::pair<CBaseEntity*, float> b) -> bool { return a.second < b.second; });
 
-	auto CheckVisibility = [&](const Vec3& vTo) -> bool
+	auto CheckVisibility = [&](const Vec3& vTo, int iEntIndex) -> bool
 		{
 			CGameTrace trace = {};
 			CTraceFilterWorldAndPropsOnly filter = {};
@@ -2572,6 +2585,9 @@ void CNavBot::AutoScope(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCm
 				bHit = trace.fraction == 1.0f;
 			}
 
+			if (iEntIndex != -1)
+				m_mAutoScopeCache[iEntIndex] = bHit;
+
 			if (bHit)
 			{
 				if (bIsClassic)
@@ -2585,41 +2601,67 @@ void CNavBot::AutoScope(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCm
 			return false;
 		};
 
+	bool bSimple = Vars::Misc::Movement::NavBot::AutoScope.Value == Vars::Misc::Movement::NavBot::AutoScopeEnum::Simple;
+
+	int iMaxTicks = TIME_TO_TICKS(0.5f);
 	PlayerStorage tStorage;
 	for (auto [pEnemy, _] : vEnemiesSorted)
 	{
-		Vector vNonPredictedPos = pEnemy->GetAbsOrigin();
-		vNonPredictedPos.z += PLAYER_JUMP_HEIGHT;
-		if (CheckVisibility(vNonPredictedPos))
-			return;
-
-		F::MoveSim.Initialize(pEnemy, tStorage, false);
-		if (tStorage.m_bFailed)
+		int iEntIndex = Vars::Misc::Movement::NavBot::AutoScopeUseCachedResults.Value ? pEnemy->entindex() : -1;
+		if (m_mAutoScopeCache.contains(iEntIndex))
 		{
-			F::MoveSim.Restore(tStorage);
+			if (m_mAutoScopeCache[iEntIndex])
+			{
+				if (bIsClassic)
+					pCmd->buttons |= IN_ATTACK;
+				else if (!pLocal->InCond(TF_COND_ZOOMED) && !(pCmd->buttons & IN_ATTACK2))
+					pCmd->buttons |= IN_ATTACK2;
+
+				tScopeTimer.Update();
+				bKeep = true;
+				break;
+			}
 			continue;
 		}
 
-		for (int i = 0; i < TIME_TO_TICKS(0.5f); i++)
-			F::MoveSim.RunTick(tStorage);
+		Vector vNonPredictedPos = pEnemy->GetAbsOrigin();
+		vNonPredictedPos.z += PLAYER_JUMP_HEIGHT;
+		if (CheckVisibility(vNonPredictedPos, iEntIndex))
+			return;
 
-		auto pTargetNav = F::NavEngine.findClosestNavSquare(tStorage.m_vPredictedOrigin);
+		if (!bSimple)
+		{
+			F::MoveSim.Initialize(pEnemy, tStorage, false);
+			if (tStorage.m_bFailed)
+			{
+				F::MoveSim.Restore(tStorage);
+				continue;
+			}
+	
+			for (int i = 0; i < iMaxTicks; i++)
+				F::MoveSim.RunTick(tStorage);
+		}
+
+		bool bResult = false;
+		Vector vPredictedPos = bSimple ? pEnemy->GetAbsOrigin() + pEnemy->GetAbsVelocity() * iMaxTicks : tStorage.m_vPredictedOrigin;
+		
+		auto pTargetNav = F::NavEngine.findClosestNavSquare(vPredictedPos);
 		if (pTargetNav)
 		{
 			Vector vTo = pTargetNav->m_center;
 
 			// If player is in the air dont try to vischeck nav areas below him, check the predicted position instead
-			if (!pEnemy->As<CBasePlayer>()->OnSolid() && vTo.DistToSqr(tStorage.m_vPredictedOrigin) >= 1000000.f)
-				vTo = tStorage.m_vPredictedOrigin;
+			if (!pEnemy->As<CBasePlayer>()->OnSolid() && vTo.DistToSqr(vPredictedPos) >= pow(400.f, 2))
+				vTo = vPredictedPos;
 
 			vTo.z += PLAYER_JUMP_HEIGHT;
-			if (CheckVisibility(vTo))
-			{
-				F::MoveSim.Restore(tStorage);
-				return;
-			}
+			bResult = CheckVisibility(vTo, iEntIndex);
 		}
-		F::MoveSim.Restore(tStorage);
+		if (!bSimple)
+			F::MoveSim.Restore(tStorage);
+
+		if (bResult)
+			break;
 	}
 }
 
@@ -2641,6 +2683,7 @@ void CNavBot::Run(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCmd)
 	if (!Vars::Misc::Movement::NavBot::Enabled.Value || !Vars::Misc::Movement::NavEngine::Enabled.Value || !F::NavEngine.isReady())
 	{
 		m_iStayNearTargetIdx = -1;
+		m_mAutoScopeCache.clear();
 		return;
 	}
 
@@ -2765,4 +2808,5 @@ void CNavBot::Reset( )
 	m_iMySentryIdx = -1;
 	m_iMyDispenserIdx = -1;
 	m_vSniperSpots.clear( );
+	m_mAutoScopeCache.clear();
 }

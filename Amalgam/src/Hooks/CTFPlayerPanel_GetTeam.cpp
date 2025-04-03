@@ -12,7 +12,7 @@ MAKE_HOOK(CTFPlayerPanel_GetTeam, S::CTFPlayerPanel_GetTeam(), int,
 	void* rcx)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFPlayerPanel_GetTeam.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFPlayerPanel_GetTeam[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx);
 #endif
 	static const auto dwDesired = S::CTFTeamStatusPlayerPanel_Update_GetTeam_Call();
@@ -33,7 +33,7 @@ MAKE_HOOK(CTFTeamStatusPlayerPanel_Update, S::CTFTeamStatusPlayerPanel_Update(),
 	void* rcx)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFPlayerPanel_GetTeam.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFPlayerPanel_GetTeam[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx);
 #endif
 	CTFTeamStatusPlayerPanel_Update_PlayerIndex = *reinterpret_cast<int*>(uintptr_t(rcx) + 580);
@@ -45,7 +45,7 @@ MAKE_HOOK(vgui_Panel_SetBgColor, S::vgui_Panel_SetBgColor(), void,
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFPlayerPanel_GetTeam.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFPlayerPanel_GetTeam[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, color);
 #endif
 	static const auto dwDesired = S::CTFTeamStatusPlayerPanel_Update_SetBgColor_Call();

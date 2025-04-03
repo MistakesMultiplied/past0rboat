@@ -8,7 +8,7 @@ MAKE_SIGNATURE(HostState_Restart, "engine.dll", "C7 05 ? ? ? ? ? ? ? ? C3 CC CC 
 MAKE_HOOK(HostState_Shutdown, S::HostState_Shutdown(), void)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::HostState_Shutdown.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::HostState_Shutdown[DEFAULT_BIND])
 		return CALL_ORIGINAL();
 #endif
 	U::Core.m_bUnload = true;
@@ -18,7 +18,7 @@ MAKE_HOOK(HostState_Shutdown, S::HostState_Shutdown(), void)
 MAKE_HOOK(HostState_Restart, S::HostState_Restart(), void)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::HostState_Shutdown.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::HostState_Shutdown[DEFAULT_BIND])
 		return CALL_ORIGINAL();
 #endif
 	U::Core.m_bUnload = true;

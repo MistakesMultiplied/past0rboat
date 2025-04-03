@@ -307,7 +307,7 @@ void CChams::Store(CTFPlayer* pLocal)
 				if (pWeapon && G::PrimaryWeaponType != EWeaponType::PROJECTILE)
 				{
 					bool bShowFriendly = false, bShowEnemy = true;
-					if (pWeapon->m_iItemDefinitionIndex() == Soldier_t_TheDisciplinaryAction)
+					if (G::PrimaryWeaponType == EWeaponType::MELEE && SDK::AttribHookValue(0, "speed_buff_ally", pWeapon) > 0)
 						bShowFriendly = true;
 					if (pWeapon->GetWeaponID() == TF_WEAPON_MEDIGUN)
 						bShowFriendly = true, bShowEnemy = false;
@@ -364,7 +364,8 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 		return;
 
 	static auto ModelRender_DrawModelExecute = U::Hooks.m_mHooks["IVModelRender_DrawModelExecute"];
-	if (!ModelRender_DrawModelExecute)
+	auto pRenderContext = I::MaterialSystem->GetRenderContext();
+	if (!ModelRender_DrawModelExecute || !pRenderContext)
 		return;
 
 	auto pEntity = I::ClientEntityList->GetClientEntity(pInfo.entity_index)->As<CTFPlayer>();
@@ -372,6 +373,7 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 		return;
 
 
+	pRenderContext->DepthRange(0.f, Vars::Chams::Backtrack::IgnoreZ.Value ? 0.2f : 1.f);
 
 	auto drawModel = [&](Vec3& vOrigin, const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
 		{
@@ -416,6 +418,8 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 		}
 	}
 	}
+
+	pRenderContext->DepthRange(0.f, 1.f);
 }
 void CChams::RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo)
 {
@@ -423,12 +427,16 @@ void CChams::RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderIn
 		return;
 
 	static auto ModelRender_DrawModelExecute = U::Hooks.m_mHooks["IVModelRender_DrawModelExecute"];
-	if (!ModelRender_DrawModelExecute)
+	auto pRenderContext = I::MaterialSystem->GetRenderContext();
+	if (!ModelRender_DrawModelExecute || !pRenderContext)
 		return;
 
 
+	pRenderContext->DepthRange(0.f, Vars::Chams::FakeAngle::IgnoreZ.Value ? 0.2f : 1.f);
 
 	ModelRender_DrawModelExecute->Call<void>(I::ModelRender, pState, pInfo, F::FakeAngle.aBones);
+
+	pRenderContext->DepthRange(0.f, 1.f);
 }
 void CChams::RenderHandler(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
 {

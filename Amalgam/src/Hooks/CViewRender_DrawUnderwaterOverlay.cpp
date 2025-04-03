@@ -7,7 +7,7 @@ MAKE_HOOK(CViewRender_DrawUnderwaterOverlay, S::CViewRender_DrawUnderwaterOverla
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CViewRender_DrawUnderwaterOverlay.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CViewRender_DrawUnderwaterOverlay[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx);
 #endif
 

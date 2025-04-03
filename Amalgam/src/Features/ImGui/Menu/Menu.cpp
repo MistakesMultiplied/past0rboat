@@ -23,9 +23,10 @@ void CMenu::DrawMenu()
 	{
 		ImVec2 vWindowPos = GetWindowPos();
 		ImVec2 vWindowSize = GetWindowSize();
+		float flSideSize = 140.f;
 
 		PushClipRect({ 0, 0 }, { ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y }, false);
-		RenderTwoToneBackground(H::Draw.Scale(140), F::Render.Background0, F::Render.Background1, F::Render.Background2, 0.f, false);
+		RenderTwoToneBackground(H::Draw.Scale(flSideSize), F::Render.Background0, F::Render.Background1, F::Render.Background2, 0.f, false);
 		PopClipRect();
 
 		ImVec2 vDrawPos = GetDrawPos();
@@ -39,27 +40,27 @@ void CMenu::DrawMenu()
 		if (CurrentBind != DEFAULT_BIND) // bind
 		{
 			flOffset = H::Draw.Scale(60);
-			pDrawList->AddRectFilled({ vDrawPos.x, vDrawPos.y + H::Draw.Scale(59) }, { vDrawPos.x + H::Draw.Scale(139), vDrawPos.y + H::Draw.Scale(60) }, F::Render.Background2);
+			pDrawList->AddRectFilled({ vDrawPos.x, vDrawPos.y + H::Draw.Scale(59) }, { vDrawPos.x + H::Draw.Scale(flSideSize - 1), vDrawPos.y + H::Draw.Scale(60) }, F::Render.Background2);
 
 			SetCursorPos({ H::Draw.Scale(12), H::Draw.Scale(11) });
 			FText("Editing bind", 0, F::Render.FontRegular);
 			SetCursorPos({ H::Draw.Scale(12), H::Draw.Scale(35) });
 			PushStyleColor(ImGuiCol_Text, F::Render.Accent.Value);
-			FText(TruncateText(tBind.m_sName, H::Draw.Scale(112)).c_str(), 0, F::Render.FontRegular);
+			FText(TruncateText(tBind.m_sName, H::Draw.Scale(flSideSize - 28)).c_str(), 0, F::Render.FontRegular);
 			PopStyleColor();
 
-			SetCursorPos({ H::Draw.Scale(16) + FCalcTextSize("Editing bind").x, H::Draw.Scale(10) });
+			SetCursorPos({ H::Draw.Scale(flSideSize - 27), H::Draw.Scale(10) });
 			if (IconButton(ICON_MD_CANCEL))
 				CurrentBind = DEFAULT_BIND;
 		}
 		else if (!Vars::Menu::CheatName.Value.empty()) // title
 		{
 			flOffset = H::Draw.Scale(36);
-			pDrawList->AddRectFilled({ vDrawPos.x, vDrawPos.y + H::Draw.Scale(35) }, { vDrawPos.x + H::Draw.Scale(139), vDrawPos.y + H::Draw.Scale(36) }, F::Render.Background2);
+			pDrawList->AddRectFilled({ vDrawPos.x, vDrawPos.y + H::Draw.Scale(35) }, { vDrawPos.x + H::Draw.Scale(flSideSize - 1), vDrawPos.y + H::Draw.Scale(36) }, F::Render.Background2);
 			
 			SetCursorPos({ H::Draw.Scale(12), H::Draw.Scale(11) });
 			PushStyleColor(ImGuiCol_Text, F::Render.Accent.Value);
-			FText(TruncateText(Vars::Menu::CheatName.Value, H::Draw.Scale(112), F::Render.FontBold).c_str(), 0, F::Render.FontBold);
+			FText(TruncateText(Vars::Menu::CheatName.Value, H::Draw.Scale(flSideSize - 28), F::Render.FontBold).c_str(), 0, F::Render.FontBold);
 			PopStyleColor();
 		}
 
@@ -73,7 +74,7 @@ void CMenu::DrawMenu()
 				{ "LOGS", "SETTINGS##", "OUTPUT" },
 				{ "SETTINGS", "CONFIG", "BINDS", "PLAYERLIST", "MATERIALS" }
 			},
-			{ &iTab, &iAimbotTab, &iVisualsTab, &iMiscTab, &iLogsTab, &iSettingsTab },
+			{ &iTab, &iAimbotTab, &iVisualsTab, nullptr, &iLogsTab, &iSettingsTab },
 			{ H::Draw.Scale(124), H::Draw.Scale(36) },
 			{ H::Draw.Scale(8), H::Draw.Scale(8) + flOffset },
 			FTabs_Vertical | FTabs_HorizontalIcons | FTabs_AlignLeft | FTabs_BarLeft,
@@ -83,10 +84,10 @@ void CMenu::DrawMenu()
 		);
 		PopFont();
 
-		SetCursorPos({ H::Draw.Scale(140), 0 });
+		SetCursorPos({ H::Draw.Scale(flSideSize), 0 });
 		PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
 		PushStyleVar(ImGuiStyleVar_WindowPadding, { H::Draw.Scale(8), H::Draw.Scale(8) });
-		if (BeginChild("Page", { vWindowSize.x - H::Draw.Scale(140), vWindowSize.y }, ImGuiChildFlags_AlwaysUseWindowPadding))
+		if (BeginChild("Page", { vWindowSize.x - H::Draw.Scale(flSideSize), vWindowSize.y }, ImGuiChildFlags_AlwaysUseWindowPadding))
 		{
 			switch (iTab)
 			{
@@ -269,8 +270,9 @@ void CMenu::MenuAimbot(int iTab)
 
 					FSlider("Splash points", Vars::Aimbot::Projectile::SplashPoints, 1, 400, 5, "%i", FSlider_Left | FSlider_Min);
 					FToggle("Splash grates", Vars::Aimbot::Projectile::SplashGrates, FToggle_Right);
-					FSlider("Splash Nth root", Vars::Aimbot::Projectile::SplashNthRoot, 0.5f, 2.f, 0.1f, "%g", FSlider_Left | FSlider_Min);
-					FSlider("Splash rotate", Vars::Aimbot::Projectile::SplashRotate, 0.f, 360.f, 1.f, "%g%%", FSlider_Right | FSlider_Min);
+					FSlider("Splash Rx", Vars::Aimbot::Projectile::SplashRotateX, -1.f, 360.f, 1.f, Vars::Aimbot::Projectile::SplashRotateX[DEFAULT_BIND] < 0.f ? "random" : "%g", FSlider_Left | FSlider_Min);
+					FSlider("Splash Ry", Vars::Aimbot::Projectile::SplashRotateY, -1.f, 360.f, 1.f, Vars::Aimbot::Projectile::SplashRotateY[DEFAULT_BIND] < 0.f ? "random" : "%g", FSlider_Right | FSlider_Min);
+					FSlider("Splash Nth root", Vars::Aimbot::Projectile::SplashNthRoot, 0.5f, 2.f, 0.1f, "%g", FSlider_Min);
 					FSlider("Direct splash count", Vars::Aimbot::Projectile::SplashCountDirect, 1, 100, 1, "%i", FSlider_Left | FSlider_Min);
 					FSlider("Arc splash count", Vars::Aimbot::Projectile::SplashCountArc, 1, 100, 1, "%i", FSlider_Right | FSlider_Min);
 					FSlider("Splash trace interval", Vars::Aimbot::Projectile::SplashTraceInterval, 1, 10, 1, "%i", FSlider_Left);
@@ -596,13 +598,15 @@ void CMenu::MenuVisuals(int iTab)
 			if (Section("Backtrack", true))
 			{
 				FToggle("Enabled", Vars::Chams::Backtrack::Enabled, FToggle_Left, nullptr, "Backtrack chams");
+				FToggle("Ignore Z", Vars::Chams::Backtrack::IgnoreZ, FToggle_Right, nullptr, "Backtrack ignore Z");
 
 				FMDropdown("Material", Vars::Chams::Backtrack::Visible, FDropdown_Left, 0, nullptr, "Backtrack material");
 				FDropdown("Draw", Vars::Chams::Backtrack::Draw, { "Last", "Last + first", "All" }, {}, FDropdown_Right, 0, nullptr, "Backtrack chams mode");
 			} EndSection();
 			if (Section("Fake Angle", true))
 			{
-				FToggle("Enabled", Vars::Chams::FakeAngle::Enabled, FToggle_None, nullptr, "Fake angle chams");
+				FToggle("Enabled", Vars::Chams::FakeAngle::Enabled, FToggle_Left, nullptr, "Fake angle chams");
+				FToggle("Ignore Z", Vars::Chams::FakeAngle::IgnoreZ, FToggle_Right, nullptr, "Fake angle ignore Z");
 
 				FMDropdown("Material", Vars::Chams::FakeAngle::Visible, FDropdown_None, 0, nullptr, "Fake angle material");
 			} EndSection();
@@ -714,6 +718,11 @@ void CMenu::MenuVisuals(int iTab)
 			if (Section("Backtrack", true))
 			{
 				FToggle("Enabled", Vars::Glow::Backtrack::Enabled, FToggle_Left, nullptr, "Backtrack glow");
+				PushTransparent(!FGet(Vars::Colors::Backtrack).a);
+				{
+					FColorPicker("Color", Vars::Colors::Backtrack, 0, FColorPicker_Middle, nullptr, "Backtrack color");
+				}
+				PopTransparent();
 
 				PushTransparent(!FGet(Vars::Glow::Backtrack::Stencil));
 				{
@@ -729,7 +738,12 @@ void CMenu::MenuVisuals(int iTab)
 			} EndSection();
 			if (Section("Fake Angle", true))
 			{
-				FToggle("Enabled", Vars::Glow::FakeAngle::Enabled, FToggle_None, nullptr, "Fake angle glow");
+				FToggle("Enabled", Vars::Glow::FakeAngle::Enabled, FToggle_Left, nullptr, "Fake angle glow");
+				PushTransparent(!FGet(Vars::Colors::FakeAngle).a);
+				{
+					FColorPicker("Color", Vars::Colors::FakeAngle, 0, FColorPicker_Middle, nullptr, "Fake angle color");
+				}
+				PopTransparent();
 
 				PushTransparent(!FGet(Vars::Glow::FakeAngle::Stencil));
 				{
@@ -787,12 +801,12 @@ void CMenu::MenuVisuals(int iTab)
 				FDropdown("Chat tags", Vars::Visuals::UI::ChatTags, { "Local", "Friends", "Party", "Assigned" }, {}, FDropdown_Right | FDropdown_Multi);
 				PushTransparent(!FGet(Vars::Visuals::UI::FieldOfView));
 				{
-					FSlider("Field of view", Vars::Visuals::UI::FieldOfView, 0, 160, 1, "%i", FSlider_Min);
+					FSlider("Field of view", Vars::Visuals::UI::FieldOfView, 0.f, 160.f, 1.f, "%g", FSlider_Min);
 				}
 				PopTransparent();
 				PushTransparent(!FGet(Vars::Visuals::UI::ZoomFieldOfView));
 				{
-					FSlider("Zoomed field of view", Vars::Visuals::UI::ZoomFieldOfView, 0, 160, 1, "%i", FSlider_Min);
+					FSlider("Zoomed field of view", Vars::Visuals::UI::ZoomFieldOfView, 0.f, 160.f, 1.f, "%g", FSlider_Min);
 				}
 				PopTransparent();
 				PushTransparent(!FGet(Vars::Visuals::UI::AspectRatio));
@@ -833,8 +847,8 @@ void CMenu::MenuVisuals(int iTab)
 			{
 				// https://developer.valvesoftware.com/wiki/Team_Fortress_2/Particles
 				// https://forums.alliedmods.net/showthread.php?t=127111
-				FSDropdown("Bullet trail", Vars::Visuals::Particles::BulletTrail, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Merasmus ZAP 2", "Big Nasty", "Distortion Trail", "Black Ink", "Line", "Beam" }, FDropdown_Left | FSDropdown_Custom);
-				FSDropdown("Crit trail", Vars::Visuals::Particles::CritTrail, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Merasmus ZAP 2", "Big Nasty", "Distortion Trail", "Black Ink", "Line", "Beam" }, FDropdown_Right | FSDropdown_Custom);
+				FSDropdown("Bullet trail", Vars::Visuals::Particles::BulletTrail, { "Off", "Big nasty", "Distortion trail", "Machina", "Sniper rail", "Short circuit", "C.A.P.P.E.R", "Merasmus ZAP", "Merasmus ZAP 2", "Black ink", "Line", "Clipped line", "Beam" }, FDropdown_Left | FSDropdown_Custom);
+				FSDropdown("Crit trail", Vars::Visuals::Particles::CritTrail, { "Off", "Big nasty", "Distortion trail", "Machina", "Sniper rail", "Short circuit", "C.A.P.P.E.R", "Merasmus ZAP", "Merasmus ZAP 2", "Black ink", "Line", "Clipped line", "Beam" }, FDropdown_Right | FSDropdown_Custom);
 				FSDropdown("Medigun beam", Vars::Visuals::Particles::MedigunBeam, { "Off", "None", "Uber", "Dispenser", "Passtime", "Bombonomicon", "White", "Orange" }, FDropdown_Left | FSDropdown_Custom);
 				FSDropdown("Medigun charge", Vars::Visuals::Particles::MedigunCharge, { "Off", "None", "Electrocuted", "Halloween", "Fireball", "Teleport", "Burning", "Scorching", "Purple energy", "Green energy", "Nebula", "Purple stars", "Green stars", "Sunbeams", "Spellbound", "Purple sparks", "Yellow sparks", "Green zap", "Yellow zap", "Plasma", "Frostbite", "Time warp", "Purple souls", "Green souls", "Bubbles", "Hearts" }, FDropdown_Right | FSDropdown_Custom);
 				FSDropdown("Projectile trail", Vars::Visuals::Particles::ProjectileTrail, { "Off", "None", "Rocket", "Critical", "Energy", "Charged", "Ray", "Fireball", "Teleport", "Fire", "Flame", "Sparks", "Flare", "Trail", "Health", "Smoke", "Bubbles", "Halloween", "Monoculus", "Sparkles", "Rainbow" }, FDropdown_Left | FSDropdown_Custom);
@@ -1088,19 +1102,19 @@ void CMenu::MenuVisuals(int iTab)
 
 				FSDropdown("Cheat title", Vars::Menu::CheatName, {}, FDropdown_Left | FSDropdown_AutoUpdate);
 				FSDropdown("Chat info prefix", Vars::Menu::CheatPrefix, {}, FDropdown_Right);
-				FKeybind("Primary key", Vars::Menu::MenuPrimaryKey.Map[DEFAULT_BIND], FButton_Left | FKeybind_AllowMenu);
-				FKeybind("Secondary key", Vars::Menu::MenuSecondaryKey.Map[DEFAULT_BIND], FButton_Right | FButton_SameLine | FKeybind_AllowMenu);
-				switch (Vars::Menu::MenuPrimaryKey.Map[DEFAULT_BIND])
+				FKeybind("Primary key", Vars::Menu::MenuPrimaryKey[DEFAULT_BIND], FButton_Left | FKeybind_AllowMenu);
+				FKeybind("Secondary key", Vars::Menu::MenuSecondaryKey[DEFAULT_BIND], FButton_Right | FButton_SameLine | FKeybind_AllowMenu);
+				switch (Vars::Menu::MenuPrimaryKey[DEFAULT_BIND])
 				{
 				case VK_LBUTTON:
 				case VK_RBUTTON:
-					Vars::Menu::MenuPrimaryKey.Map[DEFAULT_BIND] = Vars::Menu::MenuPrimaryKey.Default;
+					Vars::Menu::MenuPrimaryKey[DEFAULT_BIND] = Vars::Menu::MenuPrimaryKey.Default;
 				}
-				switch (Vars::Menu::MenuSecondaryKey.Map[DEFAULT_BIND])
+				switch (Vars::Menu::MenuSecondaryKey[DEFAULT_BIND])
 				{
 				case VK_LBUTTON:
 				case VK_RBUTTON:
-					Vars::Menu::MenuSecondaryKey.Map[DEFAULT_BIND] = Vars::Menu::MenuSecondaryKey.Default;
+					Vars::Menu::MenuSecondaryKey[DEFAULT_BIND] = Vars::Menu::MenuSecondaryKey.Default;
 				}
 			} EndSection();
 
@@ -1110,7 +1124,7 @@ void CMenu::MenuVisuals(int iTab)
 			{
 				FDropdown("Indicators", Vars::Menu::Indicators, { "Ticks", "Crit hack", "Spectators", "Ping", "Conditions", "Seed prediction", "Nav bot"}, {}, FDropdown_Multi );
 				if (FSlider("Scale", Vars::Menu::Scale, 0.75f, 2.f, 0.25f, "%g", FSlider_Min | FSlider_Precision | FSlider_NoAutoUpdate))
-					H::Fonts.Reload(Vars::Menu::Scale.Map[DEFAULT_BIND]);
+					H::Fonts.Reload(Vars::Menu::Scale[DEFAULT_BIND]);
 				FToggle("Cheap text", Vars::Menu::CheapText);
 			} EndSection();
 			if (Vars::Debug::Options.Value)
@@ -1309,7 +1323,7 @@ void CMenu::MenuMisc(int iTab)
 						PushTransparent(!FGet(Vars::Misc::Movement::NavBot::RechargeDT) || !FGet(Vars::Misc::Movement::NavBot::Enabled) || !FGet(Vars::Misc::Movement::NavEngine::Enabled));
 						FSlider("Recharge DT delay", Vars::Misc::Movement::NavBot::RechargeDTDelay, 0, 10, 1, "%is");
 						PopTransparent();
-						FToggle("Auto scope", Vars::Misc::Movement::NavBot::AutoScope);
+						FDropdown("Auto scope", Vars::Misc::Movement::NavBot::AutoScope, {"Off", "Simple", "Movesim"});
 						PushTransparent(!FGet(Vars::Misc::Movement::NavBot::AutoScope) || !FGet(Vars::Misc::Movement::NavBot::Enabled) || !FGet(Vars::Misc::Movement::NavEngine::Enabled));
 						{
 							FSlider("Auto scope cancel time", Vars::Misc::Movement::NavBot::AutoScopeCancelTime, 1, 5, 1, "%is");
@@ -1345,6 +1359,8 @@ void CMenu::MenuMisc(int iTab)
 				{
 					FSlider("Sticky danger range", Vars::Misc::Movement::NavBot::StickyDangerRange, 50, 1500, 50);
 					FSlider("Projectile danger range", Vars::Misc::Movement::NavBot::ProjectileDangerRange, 50, 1500, 50);
+					FToggle("Auto scope use cached results", Vars::Misc::Movement::NavBot::AutoScopeUseCachedResults);
+					FTooltip("should double the performance of the movesim method by only checking every 2nd tick");
 				} EndSection();
 			}
 			if (Section("Mann vs. Machine", true))
@@ -2169,46 +2185,69 @@ void CMenu::MenuSettings(int iTab)
 							sInfo = std::format("{}", _tBind.m_iInfo + 1);
 							break;
 						}
-						if (_tBind.m_bNot)
+						if (_tBind.m_bNot && (_tBind.m_iType != BindEnum::Key || _tBind.m_iInfo == BindEnum::KeyEnum::Hold))
 							sType = std::format("not {}", sType);
 
-						bool bClicked = false, bDelete = false, bEdit = false, bVisibility = false, bNot = false;
-
-						ImVec2 vOriginalPos = { H::Draw.Scale(8) + H::Draw.Scale(28) * x, H::Draw.Scale(108) + H::Draw.Scale(36) * y };
+						ImVec2 vOriginalPos = { H::Draw.Scale(8) + H::Draw.Scale(28) * std::min(x, 3), H::Draw.Scale(108) + H::Draw.Scale(36) * y };
 
 						// background
-						float flWidth = GetWindowWidth() - GetStyle().WindowPadding.x * 2 - H::Draw.Scale(28) * x;
+						float flWidth = GetWindowWidth() - GetStyle().WindowPadding.x * 2 - H::Draw.Scale(28) * std::min(x, 3);
 						float flHeight = H::Draw.Scale(28);
 						ImVec2 vDrawPos = GetDrawPos() + vOriginalPos;
-						GetWindowDrawList()->AddRectFilled(vDrawPos, { vDrawPos.x + flWidth, vDrawPos.y + flHeight }, F::Render.Background1p5, H::Draw.Scale(3));
+						if (iBind != _iBind)
+							GetWindowDrawList()->AddRectFilled(vDrawPos, { vDrawPos.x + flWidth, vDrawPos.y + flHeight }, F::Render.Background1p5, H::Draw.Scale(3));
+						else
+						{
+							ImColor tColor = F::Render.Background1p5L;
+							GetWindowDrawList()->AddRectFilled(vDrawPos, { vDrawPos.x + flWidth, vDrawPos.y + flHeight }, tColor, H::Draw.Scale(3));
+						
+							tColor = ColorToVec((VecToColor(F::Render.Background1p5)).Lerp({ 127, 127, 127 }, 1.f / 9, LerpEnum::NoAlpha));
+							GetWindowDrawList()->AddRect(vDrawPos, { vDrawPos.x + flWidth, vDrawPos.y + flHeight }, tColor, H::Draw.Scale(3), ImDrawFlags_None, H::Draw.Scale());
+						}
 
 						// text
-						SetCursorPos({ vOriginalPos.x + H::Draw.Scale(10), vOriginalPos.y + H::Draw.Scale(7) });
-						FText(TruncateText(_tBind.m_sName, (flWidth - H::Draw.Scale(105)) * (1.f / 3) - H::Draw.Scale(20)).c_str());
+						if (x > 3)
+						{	// don't indent too much
+							auto sText = std::format("-> {}", x);
+							SetCursorPos({ vOriginalPos.x - FCalcTextSize(sText.c_str()).x - H::Draw.Scale(10), vOriginalPos.y + H::Draw.Scale(7) });
+							FText(sText.c_str());
+						}
 
-						SetCursorPos({ vOriginalPos.x + (flWidth - H::Draw.Scale(105)) * (1.f / 3), vOriginalPos.y + H::Draw.Scale(7) });
+						float flTextWidth = flWidth - H::Draw.Scale(127);
+						PushTransparent(!F::Binds.WillBeEnabled(_iBind), true);
+						SetCursorPos({ vOriginalPos.x + H::Draw.Scale(10), vOriginalPos.y + H::Draw.Scale(7) });
+						FText(TruncateText(_tBind.m_sName, flTextWidth* (1.f / 3) - H::Draw.Scale(20)).c_str());
+
+						SetCursorPos({ vOriginalPos.x + flTextWidth * (1.f / 3), vOriginalPos.y + H::Draw.Scale(7) });
 						FText(sType.c_str());
 
-						SetCursorPos({ vOriginalPos.x + (flWidth - H::Draw.Scale(105)) * (2.f / 3), vOriginalPos.y + H::Draw.Scale(7) });
+						SetCursorPos({ vOriginalPos.x + flTextWidth * (2.f / 3), vOriginalPos.y + H::Draw.Scale(7) });
 						FText(sInfo.c_str());
 
 						// buttons
 						int iOffset = -3;
 
-						SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 25), vOriginalPos.y + H::Draw.Scale(5) });
-						bDelete = IconButton(ICON_MD_DELETE);
+						SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 25), vOriginalPos.y + H::Draw.Scale(6) });
+						bool bDelete = IconButton(ICON_MD_DELETE);
 
-						SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 25), vOriginalPos.y + H::Draw.Scale(5) });
-						bEdit = IconButton(ICON_MD_EDIT);
+						SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 25), vOriginalPos.y + H::Draw.Scale(6) });
+						bool bEdit = IconButton(ICON_MD_EDIT);
 
-						SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 25), vOriginalPos.y + H::Draw.Scale(5) });
-						bVisibility = IconButton(_tBind.m_bVisible ? ICON_MD_VISIBILITY : ICON_MD_VISIBILITY_OFF);
+						SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 25), vOriginalPos.y + H::Draw.Scale(6) });
+						bool bNot = IconButton(!_tBind.m_bNot ? ICON_MD_CODE : ICON_MD_CODE_OFF);
 
-						SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 25), vOriginalPos.y + H::Draw.Scale(5) });
-						bNot = IconButton(!_tBind.m_bNot ? ICON_MD_CODE : ICON_MD_CODE_OFF);
+						PushTransparent(Transparent || !_tBind.m_bVisible, true);
+						SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 25), vOriginalPos.y + H::Draw.Scale(6) });
+						bool bVisibility = IconButton(_tBind.m_bVisible ? ICON_MD_VISIBILITY : ICON_MD_VISIBILITY_OFF);
+						PopTransparent(1, 1);
+
+						SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 25), vOriginalPos.y + H::Draw.Scale(6) });
+						bool bEnable = IconButton(_tBind.m_bEnabled ? ICON_MD_TOGGLE_ON : ICON_MD_TOGGLE_OFF);
 
 						SetCursorPos(vOriginalPos);
-						bClicked = Button(std::format("##{}", _iBind).c_str(), { flWidth, flHeight });
+						bool bClicked = Button(std::format("##{}", _iBind).c_str(), { flWidth, flHeight });
+
+						PopTransparent(1, 1);
 
 						if (bClicked)
 						{
@@ -2216,6 +2255,16 @@ void CMenu::MenuSettings(int iTab)
 							{
 								bParent = false;
 								tBind.m_iParent = _iBind;
+
+								// make sure bind can't be parented to itself or any of its children
+								int _iBind2 = _iBind;
+								Bind_t _tBind2;
+								while (F::Binds.GetBind(_iBind2, &_tBind2))
+								{
+									if (_iBind2 == iBind)
+										tBind.m_iParent = DEFAULT_BIND;
+									_iBind2 = _tBind2.m_iParent;
+								}
 							}
 							else
 							{
@@ -2249,6 +2298,8 @@ void CMenu::MenuSettings(int iTab)
 						}
 						if (bEdit)
 							CurrentBind = CurrentBind != _iBind ? _iBind : DEFAULT_BIND;
+						if (bEnable)
+							_tBind.m_bEnabled = !_tBind.m_bEnabled;
 						if (bVisibility)
 							_tBind.m_bVisible = !_tBind.m_bVisible;
 						if (bNot)
@@ -2283,17 +2334,14 @@ void CMenu::MenuSettings(int iTab)
 					{
 						switch (team)
 						{
-						case 3: return Color_t(100, 150, 200, alive ? 255 : 127).Lerp(Vars::Menu::Theme::Background.Value, 0.5f, false);
-						case 2: return Color_t(255, 100, 100, alive ? 255 : 127).Lerp(Vars::Menu::Theme::Background.Value, 0.5f, false);
+						case 3: return Color_t(100, 150, 200, alive ? 255 : 127).Lerp(Vars::Menu::Theme::Background.Value, 0.5f, LerpEnum::NoAlpha);
+						case 2: return Color_t(255, 100, 100, alive ? 255 : 127).Lerp(Vars::Menu::Theme::Background.Value, 0.5f, LerpEnum::NoAlpha);
 						}
-						return Color_t(127, 127, 127, 255).Lerp(Vars::Menu::Theme::Background.Value, 0.5f, false);
+						return Color_t(127, 127, 127, 255).Lerp(Vars::Menu::Theme::Background.Value, 0.5f, LerpEnum::NoAlpha);
 					};
 				auto drawPlayer = [getTeamColor](const ListPlayer& player, int x, int y)
 					{
-						bool bClicked = false, bAdd = false, bAlias = false, bPitch = false, bYaw = false, bMinwalk = false, bView = false;
-
-						const Color_t teamColor = getTeamColor(player.m_iTeam, player.m_bAlive);
-						const ImColor imColor = ColorToVec(teamColor);
+						ImColor tColor = ColorToVec(getTeamColor(player.m_iTeam, player.m_bAlive));
 
 						ImVec2 vOriginalPos = { !x ? GetStyle().WindowPadding.x : GetWindowWidth() / 2 + GetStyle().WindowPadding.x / 2, H::Draw.Scale(36 + 36 * y) };
 
@@ -2301,20 +2349,20 @@ void CMenu::MenuSettings(int iTab)
 						float flWidth = GetWindowWidth() / 2 - GetStyle().WindowPadding.x * 1.5f;
 						float flHeight = H::Draw.Scale(28);
 						ImVec2 vDrawPos = GetDrawPos() + vOriginalPos;
-						GetWindowDrawList()->AddRectFilled(vDrawPos, { vDrawPos.x + flWidth, vDrawPos.y + flHeight }, imColor, H::Draw.Scale(3));
+						GetWindowDrawList()->AddRectFilled(vDrawPos, { vDrawPos.x + flWidth, vDrawPos.y + flHeight }, tColor, H::Draw.Scale(3));
 
 						// text + icons
 						int lOffset = H::Draw.Scale(10);
 						if (player.m_bLocal)
 						{
 							lOffset = H::Draw.Scale(29);
-							SetCursorPos({ vOriginalPos.x + H::Draw.Scale(7), vOriginalPos.y + H::Draw.Scale(5) });
+							SetCursorPos({ vOriginalPos.x + H::Draw.Scale(7), vOriginalPos.y + H::Draw.Scale(6) });
 							IconImage(ICON_MD_PERSON);
 						}
 						else if (F::Spectate.m_iIntendedTarget == player.m_iUserID)
 						{
 							lOffset = H::Draw.Scale(29);
-							SetCursorPos({ vOriginalPos.x + H::Draw.Scale(7), vOriginalPos.y + H::Draw.Scale(5) });
+							SetCursorPos({ vOriginalPos.x + H::Draw.Scale(7), vOriginalPos.y + H::Draw.Scale(6) });
 							IconImage(ICON_MD_VISIBILITY);
 						}
 						SetCursorPos({ vOriginalPos.x + lOffset, vOriginalPos.y + H::Draw.Scale(7) });
@@ -2322,31 +2370,32 @@ void CMenu::MenuSettings(int iTab)
 						lOffset += FCalcTextSize(player.m_sName.c_str()).x + H::Draw.Scale(8);
 
 						// buttons
+						bool bClicked = false, bAdd = false, bAlias = false, bPitch = false, bYaw = false, bMinwalk = false, bView = false;
 						int iOffset = 2;
 
 						if (!player.m_bFake)
 						{
 							// right
-							SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 20), vOriginalPos.y + H::Draw.Scale(5) });
+							SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 20), vOriginalPos.y + H::Draw.Scale(6) });
 							bAlias = IconButton(ICON_MD_EDIT);
 
-							SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 20), vOriginalPos.y + H::Draw.Scale(5) });
+							SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 20), vOriginalPos.y + H::Draw.Scale(6) });
 							bAdd = IconButton(ICON_MD_ADD);
 						}
 
 						bool bResolver = Vars::AntiHack::Resolver::Enabled.Value && !player.m_bLocal;
 						if (bResolver)
 						{
-							SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 20), vOriginalPos.y + 5 });
+							SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 20), vOriginalPos.y + H::Draw.Scale(6) });
 							bView = IconButton(ICON_MD_NEAR_ME);
 
-							SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 20), vOriginalPos.y + 5 });
+							SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 20), vOriginalPos.y + H::Draw.Scale(6) });
 							bMinwalk = IconButton(ICON_MD_DIRECTIONS_WALK);
 
-							SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 20), vOriginalPos.y + 5 });
+							SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 20), vOriginalPos.y + H::Draw.Scale(6) });
 							bYaw = IconButton(ICON_MD_ARROW_FORWARD);
 
-							SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 20), vOriginalPos.y + 5 });
+							SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(iOffset += 20), vOriginalPos.y + H::Draw.Scale(6) });
 							bPitch = IconButton(ICON_MD_ARROW_UPWARD);
 						}
 
@@ -2375,14 +2424,14 @@ void CMenu::MenuSettings(int iTab)
 								float flTagOffset = 0;
 								for (auto& [pTag, iID] : vTags)
 								{
-									ImColor tagColor = ColorToVec(pTag->Color);
+									ImColor tTagColor = ColorToVec(pTag->Color);
 									float flTagWidth = FCalcTextSize(pTag->Name.c_str()).x + H::Draw.Scale(!iID ? 10 : 25);
 									float flTagHeight = H::Draw.Scale(20);
 									ImVec2 vTagPos = { flTagOffset, H::Draw.Scale(4) };
 
-									PushStyleColor(ImGuiCol_Text, IsColorDark(tagColor) ? ImVec4{ 1, 1, 1, 1 } : ImVec4{ 0, 0, 0, 1 });
+									PushStyleColor(ImGuiCol_Text, IsColorDark(tTagColor) ? ImVec4{ 1, 1, 1, 1 } : ImVec4{ 0, 0, 0, 1 });
 
-									GetWindowDrawList()->AddRectFilled(vDrawPos + vTagPos, { vDrawPos.x + vTagPos.x + flTagWidth, vDrawPos.y + vTagPos.y + flTagHeight }, tagColor, H::Draw.Scale(3));
+									GetWindowDrawList()->AddRectFilled(vDrawPos + vTagPos, { vDrawPos.x + vTagPos.x + flTagWidth, vDrawPos.y + vTagPos.y + flTagHeight }, tTagColor, H::Draw.Scale(3));
 									SetCursorPos({ vTagPos.x + H::Draw.Scale(5), vTagPos.y + H::Draw.Scale(4) });
 									FText(pTag->Name.c_str());
 									SetCursorPos({ vTagPos.x + flTagWidth - H::Draw.Scale(18), vTagPos.y + H::Draw.Scale(2) });
@@ -2741,9 +2790,18 @@ void CMenu::MenuSettings(int iTab)
 					// background
 					float flWidth = GetWindowWidth() * (_tTag.Label ? 1.f / 3 : 2.f / 3) - GetStyle().WindowPadding.x * 1.5f;
 					float flHeight = H::Draw.Scale(28);
-					ImColor imColor = ColorToVec(_tTag.Color.Lerp(Vars::Menu::Theme::Background.Value, 0.5f, false));
+					ImColor tColor = ColorToVec(_tTag.Color.Lerp(Vars::Menu::Theme::Background.Value, 0.5f, LerpEnum::NoAlpha));
 					ImVec2 vDrawPos = GetDrawPos() + vOriginalPos;
-					GetWindowDrawList()->AddRectFilled(vDrawPos, { vDrawPos.x + flWidth, vDrawPos.y + flHeight }, imColor, H::Draw.Scale(3));
+					if (iID != _iID)
+						GetWindowDrawList()->AddRectFilled(vDrawPos, { vDrawPos.x + flWidth, vDrawPos.y + flHeight }, tColor, H::Draw.Scale(3));
+					else
+					{
+						ImColor tColor2 = { tColor.Value.x * 1.1f, tColor.Value.y * 1.1f, tColor.Value.z * 1.1f, tColor.Value.w };
+						GetWindowDrawList()->AddRectFilled(vDrawPos, { vDrawPos.x + flWidth, vDrawPos.y + flHeight }, tColor2, H::Draw.Scale(3));
+
+						tColor2 = ColorToVec(_tTag.Color.Lerp(Vars::Menu::Theme::Background.Value, 0.25f, LerpEnum::NoAlpha));
+						GetWindowDrawList()->AddRect(vDrawPos, { vDrawPos.x + flWidth, vDrawPos.y + flHeight }, tColor2, H::Draw.Scale(3), ImDrawFlags_None, H::Draw.Scale());
+					}
 
 					// text
 					SetCursorPos({ vOriginalPos.x + H::Draw.Scale(10), vOriginalPos.y + H::Draw.Scale(7) });
@@ -2756,7 +2814,7 @@ void CMenu::MenuSettings(int iTab)
 					}
 
 					// buttons / icons
-					SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(22), vOriginalPos.y + H::Draw.Scale(5) });
+					SetCursorPos({ vOriginalPos.x + flWidth - H::Draw.Scale(22), vOriginalPos.y + H::Draw.Scale(6) });
 					if (!_tTag.Locked)
 						bDelete = IconButton(ICON_MD_DELETE);
 					else
@@ -3144,13 +3202,17 @@ void CMenu::MenuSettings(int iTab)
 	case 3:
 		if (BeginTable("MaterialsTable", 2))
 		{
+			TableSetupColumn("MaterialsTable1", ImGuiTableColumnFlags_WidthFixed, H::Draw.Scale(288));
+			TableSetupColumn("MaterialsTable2", ImGuiTableColumnFlags_WidthFixed, GetWindowWidth());
+
 			static TextEditor TextEditor;
 			static std::string CurrentMaterial;
 			static bool LockedMaterial;
 
 			/* Column 1 */
 			TableNextColumn();
-			if (Section("Manager"))
+			bool bManager = Section("Manager");
+			if (bManager)
 			{
 				static std::string newName;
 				FSDropdown("Material name", &newName, {}, FDropdown_Left | FSDropdown_AutoUpdate);
@@ -3223,6 +3285,8 @@ void CMenu::MenuSettings(int iTab)
 					SetCursorPos(vOriginalPos); DebugDummy({ 0, H::Draw.Scale(28) });
 				}
 			} EndSection();
+			if (!bManager)
+				SetScrollY(0);
 			SetCursorPosY(GetCursorPosY() - 8);
 			if (FButton("Folder", FButton_Fit))
 				ShellExecuteA(NULL, NULL, F::Configs.m_sMaterialsPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
@@ -3278,36 +3342,46 @@ void CMenu::MenuSettings(int iTab)
 }
 #pragma endregion
 
-void CMenu::AddDraggable(const char* sTitle, ConfigVar<DragBox_t>& var, bool bShouldDraw)
+struct DragBoxStorage_t
+{
+	DragBox_t m_tDragBox;
+	float m_flScale;
+};
+static std::unordered_map<uint32_t, DragBoxStorage_t> mDragBoxStorage = {};
+void CMenu::AddDraggable(const char* sLabel, ConfigVar<DragBox_t>& var, bool bShouldDraw, ImVec2 vSize)
 {
 	using namespace ImGui;
 
 	if (!bShouldDraw)
 		return;
 
-	static std::unordered_map<const char*, std::pair<DragBox_t, float>> old = {};
-	DragBox_t info = FGet(var, true);
-	const float sizeX = H::Draw.Scale(100), sizeY = H::Draw.Scale(40);
-	SetNextWindowSize({ sizeX, sizeY }, ImGuiCond_Always);
-	if (!old.contains(sTitle) || info != old[sTitle].first || sizeX != old[sTitle].second)
-		SetNextWindowPos({ float(info.x - sizeX / 2), float(info.y) }, ImGuiCond_Always);
+	auto tDragBox = FGet(var, true);
+	auto uHash = FNV1A::Hash32(sLabel);
+
+	bool bContains = mDragBoxStorage.contains(uHash);
+	auto& tStorage = mDragBoxStorage[uHash];
+
+	SetNextWindowSize(vSize, ImGuiCond_Always);
+	if (!bContains || tDragBox != tStorage.m_tDragBox || H::Draw.Scale() != tStorage.m_flScale)
+		SetNextWindowPos({ float(tDragBox.x - vSize.x / 2), float(tDragBox.y) }, ImGuiCond_Always);
 
 	PushStyleColor(ImGuiCol_WindowBg, {});
 	PushStyleColor(ImGuiCol_Border, F::Render.Active.Value);
 	PushStyleVar(ImGuiStyleVar_WindowRounding, H::Draw.Scale(3));
 	PushStyleVar(ImGuiStyleVar_WindowBorderSize, H::Draw.Scale(1));
-	PushStyleVar(ImGuiStyleVar_WindowMinSize, { sizeX, sizeY });
-	if (Begin(sTitle, nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
+	PushStyleVar(ImGuiStyleVar_WindowMinSize, vSize);
+	if (Begin(sLabel, nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
 	{
 		ImVec2 vWindowPos = GetWindowPos();
 
-		info.x = vWindowPos.x + sizeX / 2; info.y = vWindowPos.y; old[sTitle] = { info, sizeX };
-		FSet(var, info);
+		tDragBox.x = vWindowPos.x + vSize.x / 2, tDragBox.y = vWindowPos.y;
+		tStorage = { tDragBox, H::Draw.Scale() };
+		FSet(var, tDragBox);
 
 		PushFont(F::Render.FontBold);
-		auto size = FCalcTextSize(sTitle);
-		SetCursorPos({ (sizeX - size.x) * 0.5f, (sizeY - size.y) * 0.5f });
-		FText(sTitle);
+		ImVec2 vTextSize = FCalcTextSize(sLabel);
+		SetCursorPos({ (vSize.x - vTextSize.x) * 0.5f, (vSize.y - vTextSize.y) * 0.5f });
+		FText(sLabel);
 		PopFont();
 
 		End();
@@ -3316,6 +3390,67 @@ void CMenu::AddDraggable(const char* sTitle, ConfigVar<DragBox_t>& var, bool bSh
 	PopStyleColor(2);
 }
 
+struct WindowBoxStorage_t
+{
+	WindowBox_t m_tWindowBox;
+	float m_flScale;
+};
+static std::unordered_map<uint32_t, WindowBoxStorage_t> mWindowBoxStorage = {};
+void CMenu::AddResizableDraggable(const char* sLabel, ConfigVar<WindowBox_t>& var, bool bShouldDraw, ImVec2 vMinSize, ImVec2 vMaxSize, ImGuiSizeCallback fCustomCallback)
+{
+	using namespace ImGui;
+
+	if (!bShouldDraw)
+		return;
+
+	auto tWindowBox = FGet(var, true);
+	auto uHash = FNV1A::Hash32(sLabel);
+
+	bool bContains = mWindowBoxStorage.contains(uHash);
+	auto& tStorage = mWindowBoxStorage[uHash];
+
+	SetNextWindowSizeConstraints(vMinSize, vMaxSize, fCustomCallback);
+	if (!bContains || tWindowBox != tStorage.m_tWindowBox || H::Draw.Scale() != tStorage.m_flScale)
+	{
+		SetNextWindowPos({ float(tWindowBox.x - tWindowBox.w / 2), float(tWindowBox.y) }, ImGuiCond_Always);
+		SetNextWindowSize({ float(tWindowBox.w), float(tWindowBox.h) }, ImGuiCond_Always);
+	}
+
+	PushStyleColor(ImGuiCol_WindowBg, {});
+	PushStyleColor(ImGuiCol_Border, F::Render.Active.Value);
+	PushStyleVar(ImGuiStyleVar_WindowRounding, H::Draw.Scale(3));
+	PushStyleVar(ImGuiStyleVar_WindowBorderSize, H::Draw.Scale(1));
+	if (Begin(sLabel, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
+	{
+		ImVec2 vWindowPos = GetWindowPos();
+		ImVec2 vWinSize = GetWindowSize();
+
+		tWindowBox.w = vWinSize.x, tWindowBox.h = vWinSize.y;
+		tWindowBox.x = vWindowPos.x + tWindowBox.w / 2, tWindowBox.y = vWindowPos.y;
+		tStorage = { tWindowBox, H::Draw.Scale() };
+		FSet(var, tWindowBox);
+
+		PushFont(F::Render.FontBold);
+		ImVec2 vTextSize = FCalcTextSize(sLabel);
+		SetCursorPos({ (vWinSize.x - vTextSize.x) * 0.5f, (vWinSize.y - vTextSize.y) * 0.5f });
+		FText(sLabel);
+		PopFont();
+
+		End();
+	}
+	PopStyleVar(2);
+	PopStyleColor(2);
+}
+
+struct BindInfo_t
+{
+	const char* sName;
+	std::string sInfo;
+	std::string sState;
+
+	int iBind;
+	Bind_t& tBind;
+};
 void CMenu::DrawBinds()
 {
 	using namespace ImGui;
@@ -3323,14 +3458,14 @@ void CMenu::DrawBinds()
 	if (m_bIsOpen ? false : I::EngineVGui->IsGameUIVisible() || I::MatSystemSurface->IsCursorVisible() && !I::EngineClient->IsPlayingDemo())
 		return;
 
-	std::vector<std::tuple<bool, const char*, std::string, std::string, int, Bind_t&>> vInfo;
+	std::vector<BindInfo_t> vInfo;
 	std::function<void(int)> getBinds = [&](int iParent)
 		{
 			for (auto it = F::Binds.m_vBinds.begin(); it < F::Binds.m_vBinds.end(); it++)
 			{
 				int iBind = std::distance(F::Binds.m_vBinds.begin(), it);
 				auto& tBind = *it;
-				if (iParent != tBind.m_iParent)
+				if (iParent != tBind.m_iParent || !tBind.m_bEnabled && !m_bIsOpen)
 					continue;
 
 				if (tBind.m_bVisible || m_bIsOpen)
@@ -3376,10 +3511,10 @@ void CMenu::DrawBinds()
 						sInfo = std::format("{}", tBind.m_iInfo + 1);
 						break;
 					}
-					if (tBind.m_bNot)
+					if (tBind.m_bNot && (tBind.m_iType != BindEnum::Key || tBind.m_iInfo == BindEnum::KeyEnum::Hold))
 						sInfo = std::format("not {}", sInfo);
 
-					vInfo.emplace_back(tBind.m_bActive, tBind.m_sName.c_str(), sType, sInfo, iBind, tBind);
+					vInfo.emplace_back(tBind.m_sName.c_str(), sType, sInfo, iBind, tBind);
 				}
 
 				if (tBind.m_bActive || m_bIsOpen)
@@ -3397,7 +3532,7 @@ void CMenu::DrawBinds()
 
 	float flNameWidth = 0, flInfoWidth = 0, flStateWidth = 0;
 	PushFont(F::Render.FontSmall);
-	for (auto& [_, sName, sInfo, sState, iBind, tBind] : vInfo)
+	for (auto& [sName, sInfo, sState, iBind, tBind] : vInfo)
 	{
 		flNameWidth = std::max(flNameWidth, FCalcTextSize(sName).x);
 		flInfoWidth = std::max(flInfoWidth, FCalcTextSize(sInfo.c_str()).x);
@@ -3406,11 +3541,11 @@ void CMenu::DrawBinds()
 	PopFont();
 	flNameWidth += H::Draw.Scale(9), flInfoWidth += H::Draw.Scale(9), flStateWidth += H::Draw.Scale(9);
 
-	float flWidth = flNameWidth + flInfoWidth + flStateWidth + (m_bIsOpen ? H::Draw.Scale(88) : H::Draw.Scale(14));
+	float flWidth = flNameWidth + flInfoWidth + flStateWidth + (m_bIsOpen ? H::Draw.Scale(113) : H::Draw.Scale(14));
 	float flHeight = H::Draw.Scale(18 * vInfo.size() + (Vars::Menu::BindWindowTitle.Value ? 42 : 12));
 	SetNextWindowSize({ flWidth, flHeight });
 	PushStyleVar(ImGuiStyleVar_WindowMinSize, { H::Draw.Scale(40), H::Draw.Scale(40) });
-	if (Begin("Binds", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize))
+	if (Begin("Binds", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing))
 	{
 		ImVec2 vWindowPos = GetWindowPos();
 
@@ -3437,17 +3572,20 @@ void CMenu::DrawBinds()
 		}
 
 		PushFont(F::Render.FontSmall);
-		int i = 0; for (auto& [bActive, sName, sInfo, sState, iBind, tBind] : vInfo)
+		int i = 0; for (auto& [sName, sInfo, sState, iBind, tBind] : vInfo)
 		{
 			float flPosX = 0;
 
+			if (m_bIsOpen)
+				PushTransparent(!F::Binds.WillBeEnabled(iBind), true);
+
 			SetCursorPos({ flPosX += H::Draw.Scale(12), H::Draw.Scale(iListStart + 18 * i) });
-			PushStyleColor(ImGuiCol_Text, bActive ? F::Render.Accent.Value : F::Render.Inactive.Value);
+			PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Accent.Value : F::Render.Inactive.Value);
 			FText(sName);
 			PopStyleColor();
 
 			SetCursorPos({ flPosX += flNameWidth, H::Draw.Scale(iListStart + 18 * i) });
-			PushStyleColor(ImGuiCol_Text, bActive ? F::Render.Active.Value : F::Render.Inactive.Value);
+			PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Active.Value : F::Render.Inactive.Value);
 			FText(sInfo.c_str());
 
 			SetCursorPos({ flPosX += flInfoWidth, H::Draw.Scale(iListStart + 18 * i) });
@@ -3462,8 +3600,15 @@ void CMenu::DrawBinds()
 				SetCursorPos({ flWidth - H::Draw.Scale(50), H::Draw.Scale(iListStart - 1 + 18 * i) });
 				bool bNot = IconButton(!tBind.m_bNot ? ICON_MD_CODE : ICON_MD_CODE_OFF);
 
+				PushTransparent(Transparent || !tBind.m_bVisible, true);
 				SetCursorPos({ flWidth - H::Draw.Scale(75), H::Draw.Scale(iListStart - 1 + 18 * i) });
 				bool bVisibility = IconButton(tBind.m_bVisible ? ICON_MD_VISIBILITY : ICON_MD_VISIBILITY_OFF);
+				PopTransparent(1, 1);
+
+				SetCursorPos({ flWidth - H::Draw.Scale(100), H::Draw.Scale(iListStart - 1 + 18 * i) });
+				bool bEnable = IconButton(tBind.m_bEnabled ? ICON_MD_TOGGLE_ON : ICON_MD_TOGGLE_OFF);
+
+				PopTransparent(1, 1);
 
 				PushFont(F::Render.FontRegular);
 				PushStyleVar(ImGuiStyleVar_WindowPadding, { H::Draw.Scale(8), H::Draw.Scale(8) });
@@ -3490,10 +3635,12 @@ void CMenu::DrawBinds()
 
 					EndPopup();
 				}
-				if (bNot)
-					tBind.m_bNot = !tBind.m_bNot;
+				if (bEnable)
+					tBind.m_bEnabled = !tBind.m_bEnabled;
 				if (bVisibility)
 					tBind.m_bVisible = !tBind.m_bVisible;
+				if (bNot)
+					tBind.m_bNot = !tBind.m_bNot;
 
 				PopStyleVar();
 				PopFont();
@@ -3508,90 +3655,10 @@ void CMenu::DrawBinds()
 	PopStyleVar();
 }
 
-/* Window for the camera feature */
-void CMenu::DrawCameraWindow()
-{
-	using namespace ImGui;
-
-	if (!FGet(Vars::Visuals::Simulation::ProjectileCamera))
-		return;
-
-	static WindowBox_t old = { -2147483648, -2147483648 };
-	WindowBox_t info = FGet(Vars::Visuals::Simulation::ProjectileWindow, true);
-	if (info != old)
-	{
-		SetNextWindowPos({ float(info.x), float(info.y) }, ImGuiCond_Always);
-		SetNextWindowSize({ float(info.w), float(info.h) }, ImGuiCond_Always);
-	}
-
-	PushStyleColor(ImGuiCol_WindowBg, {});
-	PushStyleColor(ImGuiCol_Border, F::Render.Active.Value);
-	PushStyleVar(ImGuiStyleVar_WindowRounding, H::Draw.Scale(3));
-	PushStyleVar(ImGuiStyleVar_WindowBorderSize, H::Draw.Scale(1));
-	PushStyleVar(ImGuiStyleVar_WindowMinSize, { H::Draw.Scale(100), H::Draw.Scale(100) });
-	if (Begin("Camera", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
-	{
-		ImVec2 vWindowPos = GetWindowPos();
-		ImVec2 vWinSize = GetWindowSize();
-
-		info.x = vWindowPos.x; info.y = vWindowPos.y; info.w = vWinSize.x; info.h = vWinSize.y; old = info;
-		FSet(Vars::Visuals::Simulation::ProjectileWindow, info);
-
-		PushFont(F::Render.FontBold);
-		auto size = FCalcTextSize("Camera");
-		SetCursorPos({ (vWinSize.x - size.x) * 0.5f, (vWinSize.y - size.y) * 0.5f });
-		FText("Camera");
-		PopFont();
-
-		End();
-	}
-	PopStyleVar(3);
-	PopStyleColor(2);
-}
-
-static void SquareConstraints(ImGuiSizeCallbackData* data)
+static inline void SquareConstraints(ImGuiSizeCallbackData* data)
 {
 	//data->DesiredSize.x = data->DesiredSize.y = std::max(data->DesiredSize.x, data->DesiredSize.y);
 	data->DesiredSize.x = data->DesiredSize.y = (data->DesiredSize.x + data->DesiredSize.y) / 2;
-}
-void CMenu::DrawRadar()
-{
-	using namespace ImGui;
-
-	if (!FGet(Vars::Radar::Main::Enabled))
-		return;
-
-	static WindowBox_t old = { -2147483648, -2147483648 };
-	WindowBox_t info = FGet(Vars::Radar::Main::Window, true);
-	if (info != old)
-	{
-		SetNextWindowPos({ float(info.x), float(info.y) }, ImGuiCond_Always);
-		SetNextWindowSize({ float(info.w), float(info.w) }, ImGuiCond_Always);
-	}
-
-	PushStyleColor(ImGuiCol_WindowBg, {});
-	PushStyleColor(ImGuiCol_Border, F::Render.Active.Value);
-	PushStyleVar(ImGuiStyleVar_WindowRounding, H::Draw.Scale(3));
-	PushStyleVar(ImGuiStyleVar_WindowBorderSize, H::Draw.Scale(1));
-	SetNextWindowSizeConstraints({ H::Draw.Scale(100), H::Draw.Scale(100) }, { H::Draw.Scale(1000), H::Draw.Scale(1000) }, SquareConstraints);
-	if (Begin("Radar", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
-	{
-		const ImVec2 vWindowPos = GetWindowPos();
-		const ImVec2 winSize = GetWindowSize();
-
-		info.x = vWindowPos.x; info.y = vWindowPos.y; info.w = winSize.x; old = info;
-		FSet(Vars::Radar::Main::Window, info);
-
-		PushFont(F::Render.FontBold);
-		auto size = FCalcTextSize("Radar");
-		SetCursorPos({ (winSize.x - size.x) * 0.5f, (winSize.y - size.y) * 0.5f });
-		FText("Radar");
-		PopFont();
-
-		End();
-	}
-	PopStyleVar(2);
-	PopStyleColor(2);
 }
 
 void CMenu::Render()
@@ -3615,8 +3682,6 @@ void CMenu::Render()
 	{
 		DrawMenu();
 
-		DrawCameraWindow();
-		DrawRadar();
 		AddDraggable("Ticks", Vars::Menu::TicksDisplay, FGet(Vars::Menu::Indicators) & Vars::Menu::IndicatorsEnum::Ticks);
 		AddDraggable("Crit hack", Vars::Menu::CritsDisplay, FGet(Vars::Menu::Indicators) & Vars::Menu::IndicatorsEnum::CritHack);
 		AddDraggable("Spectators", Vars::Menu::SpectatorsDisplay, FGet(Vars::Menu::Indicators) & Vars::Menu::IndicatorsEnum::Spectators);
@@ -3624,7 +3689,9 @@ void CMenu::Render()
 		AddDraggable("Conditions", Vars::Menu::ConditionsDisplay, FGet(Vars::Menu::Indicators) & Vars::Menu::IndicatorsEnum::Conditions);
 		AddDraggable("Seed prediction", Vars::Menu::SeedPredictionDisplay, FGet(Vars::Menu::Indicators) & Vars::Menu::IndicatorsEnum::SeedPrediction);
 		AddDraggable("Nav bot", Vars::Menu::NavBotDisplay, FGet(Vars::Menu::Indicators) & Vars::Menu::IndicatorsEnum::NavBot);
-		
+		AddResizableDraggable("Camera", Vars::Visuals::Simulation::ProjectileWindow, FGet(Vars::Visuals::Simulation::ProjectileCamera));
+		AddResizableDraggable("Radar", Vars::Radar::Main::Window, FGet(Vars::Radar::Main::Enabled), { H::Draw.Scale(100), H::Draw.Scale(100) }, { H::Draw.Scale(1000), H::Draw.Scale(1000) }, SquareConstraints);
+
 		F::Render.Cursor = GetMouseCursor();
 
 		if (!vDisabled.empty())

@@ -7,7 +7,7 @@ MAKE_SIGNATURE(CNetGraphPanel_DrawTextFields_GetClientInterpAmount_Call2, "clien
 MAKE_HOOK(GetClientInterpAmount, S::GetClientInterpAmount(), float)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::GetClientInterpAmount.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::GetClientInterpAmount[DEFAULT_BIND])
 		return CALL_ORIGINAL();
 #endif
 	static const auto dwDesired1 = S::CNetGraphPanel_DrawTextFields_GetClientInterpAmount_Call1();

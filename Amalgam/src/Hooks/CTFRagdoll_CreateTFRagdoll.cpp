@@ -7,7 +7,7 @@ MAKE_HOOK(CTFRagdoll_CreateTFRagdoll, S::CTFRagdoll_CreateTFRagdoll(), void,
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFRagdoll_CreateTFRagdoll.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFRagdoll_CreateTFRagdoll[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx);
 #endif
 	if (Vars::Visuals::Ragdolls::NoRagdolls.Value)

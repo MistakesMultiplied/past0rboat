@@ -141,7 +141,7 @@ MAKE_HOOK(CSoundEmitterSystem_EmitSound, S::CSoundEmitterSystem_EmitSound(), voi
 	void* rcx, IRecipientFilter& filter, int entindex, const EmitSound_t& ep)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CSoundEmitterSystem_EmitSound.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CSoundEmitterSystem_EmitSound[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, filter, entindex, ep);
 #endif
 
@@ -156,7 +156,7 @@ MAKE_HOOK(S_StartDynamicSound, S::S_StartDynamicSound(), int,
 	StartSoundParams_t& params)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CSoundEmitterSystem_EmitSound.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CSoundEmitterSystem_EmitSound[DEFAULT_BIND])
 		return CALL_ORIGINAL(params);
 #endif
 
@@ -172,7 +172,7 @@ MAKE_HOOK(S_StartSound, S::S_StartSound(), int,
 	StartSoundParams_t& params)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CSoundEmitterSystem_EmitSound.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CSoundEmitterSystem_EmitSound[DEFAULT_BIND])
 		return CALL_ORIGINAL(params);
 #endif
 

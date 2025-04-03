@@ -7,7 +7,7 @@ MAKE_HOOK(CTFPlayer_DoAnimationEvent, S::CTFPlayer_DoAnimationEvent(), void,
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CTFPlayer_DoAnimationEvent.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CTFPlayer_DoAnimationEvent[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, event, nData);
 #endif
 	auto pPlayer = reinterpret_cast<CTFPlayer*>(rcx);

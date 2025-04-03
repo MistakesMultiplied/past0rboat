@@ -519,7 +519,7 @@ bool CAutoDetonate::StickyCheck(CTFPlayer* pLocal, CUserCmd* pCmd)
 						const bool bCheckPredicted{ flLatency ? CanSee(pVictim, pSticky, vPredictedStickyOrigins[pSticky->entindex()], vRadiuses[pSticky->entindex()]) : true };
 						if (bCheckPredicted && CanSee(pVictim, pSticky, pSticky->m_vecOrigin(), vRadiuses[pSticky->entindex()]))
 						{
-							if (pCmd && pWeapon && pWeapon->m_iItemDefinitionIndex() == Demoman_s_TheScottishResistance)
+							if (pCmd && pWeapon && pWeapon->GetWeaponID() == TF_WEAPON_PIPEBOMBLAUNCHER && pWeapon->As<CTFPipebombLauncher>()->GetDetonateType() == TF_DETONATE_MODE_DOT)
 							{
 								Vec3 vAngleTo = Math::CalcAngle(pLocal->GetShootPos(), pSticky->m_vecOrigin());
 								SDK::FixMovement(pCmd, vAngleTo);

@@ -14,16 +14,16 @@
 #include "../Features/Binds/Binds.h"
 #include "../Features//TickHandler/TickHandler.h"
 
-MAKE_HOOK( IBaseClientDLL_FrameStageNotify, U::Memory.GetVFunc( I::BaseClientDLL, 35 ), void,
-	void* rcx, ClientFrameStage_t curStage )
+MAKE_HOOK(IBaseClientDLL_FrameStageNotify, U::Memory.GetVFunc(I::BaseClientDLL, 35), void,
+		  void* rcx, ClientFrameStage_t curStage)
 {
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::IBaseClientDLL_FrameStageNotify.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::IBaseClientDLL_FrameStageNotify[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, curStage);
 #endif
 
-	if ( G::Unload )
-		return CALL_ORIGINAL( rcx, curStage );
+	if (G::Unload)
+		return CALL_ORIGINAL(rcx, curStage);
 
 	CALL_ORIGINAL(rcx, curStage);
 
@@ -49,7 +49,7 @@ MAKE_HOOK( IBaseClientDLL_FrameStageNotify, U::Memory.GetVFunc( I::BaseClientDLL
 			auto pPlayer = pEntity->As<CTFPlayer>();
 			if (pPlayer->entindex() == I::EngineClient->GetLocalPlayer() && !I::EngineClient->IsPlayingDemo() || pPlayer->IsDormant() || !pPlayer->IsAlive())
 				continue; // local player managed in CreateMove
-				bool bResolver = F::Resolver.GetAngles(pPlayer);
+			bool bResolver = F::Resolver.GetAngles(pPlayer);
 			if (!(Vars::Visuals::Removals::Interpolation.Value || bResolver))
 				continue;
 			if (int iDeltaTicks = TIME_TO_TICKS(H::Entities.GetDeltaTime(pPlayer->entindex())))

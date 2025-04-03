@@ -7,7 +7,7 @@ MAKE_HOOK(CClientModeShared_OverrideView, U::Memory.GetVFunc(I::ClientModeShared
 {
 #ifndef TEXTMODE
 #ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CClientModeShared_OverrideView.Map[DEFAULT_BIND])
+	if (!Vars::Hooks::CClientModeShared_OverrideView[DEFAULT_BIND])
 		return CALL_ORIGINAL(rcx, pView);
 #endif
 
