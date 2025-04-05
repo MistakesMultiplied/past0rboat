@@ -96,6 +96,14 @@ namespace Vars
 	NAMESPACE_BEGIN(Config)
 		CVar(LoadDebugSettings, false)
 	NAMESPACE_END(Config)
+
+	NAMESPACE_BEGIN(OWOBase)
+		CVar(Enabled, true)
+		CVar(AutoSync, true)
+		CVar(SyncInterval, 60.f)
+		CVar(LastSyncTime, 0.f, NOSAVE)
+	NAMESPACE_END(OWOBase)
+
 	NAMESPACE_BEGIN(Menu)
 		CVar(CheatName, std::string("Amalgam"), VISUAL)
 		CVar(CheatPrefix, std::string("[Amalgam]"), VISUAL)

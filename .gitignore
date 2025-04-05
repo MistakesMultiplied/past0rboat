@@ -36,6 +36,9 @@ boost_1_86_0
 oldgam
 oldergem
 cathook 
+owobase-api
+Amalgam/src/Features/OWOBase
+melodyhook1
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/

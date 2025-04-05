@@ -1279,6 +1279,13 @@ void CMenu::MenuMisc(int iTab)
 				FToggle("Auto F1 priority", Vars::Misc::Automation::AutoF1Priority, FToggle_Right);
 				FDropdown("Voice command spam", Vars::Misc::Automation::VoiceCommandSpam, { "Off", "Random", "Medic", "Thanks", "Nice Shot", "Cheers", "Jeers", "Go Go Go", "Move Up", "Go Left", "Go Right", "Yes", "No", "Incoming", "Spy", "Sentry Ahead", "Need Teleporter", "Pootis", "Need Sentry", "Activate Charge", "Help", "Battle Cry" }, {}, FDropdown_Left);
 				FToggle("Noise spam", Vars::Misc::Automation::NoiseSpam, FToggle_Right);
+				FToggle("OWOBase", Vars::OWOBase::Enabled, FToggle_Left);
+				FToggle("Auto sync", Vars::OWOBase::AutoSync, FToggle_Right);
+				PushTransparent(!FGet(Vars::OWOBase::AutoSync));
+				{
+					FSlider("Sync interval", Vars::OWOBase::SyncInterval, 10.f, 300.f, 10.f, "%is");
+				}
+				PopTransparent();
 			} EndSection();
 
 			/* Column 2 */

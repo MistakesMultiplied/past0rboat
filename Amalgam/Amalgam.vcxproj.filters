@@ -203,6 +203,7 @@
     <ClCompile Include="src\Features\NavBot\NavEngine\MicroPather\micropather.cpp" />
     <ClCompile Include="src\Features\NavBot\NavEngine\NavEngine.cpp" />
     <ClCompile Include="src\Features\NavBot\NavBot.cpp" />
+    <ClCompile Include="src\Features\OWOBase\OWOBase.cpp" />
     <ClCompile Include="src\Features\AutoJoin\AutoJoin.cpp" />
     <ClCompile Include="src\Hooks\HostState_Shutdown.cpp" />
     <ClCompile Include="include\ImGui\LanguageDefinitions.cpp" />
@@ -603,6 +604,7 @@
     <ClInclude Include="src\Features\NavBot\NavEngine\MicroPather\micropather.h" />
     <ClInclude Include="src\Features\NavBot\NavEngine\NavEngine.h" />
     <ClInclude Include="src\Features\NavBot\NavBot.h" />
+    <ClInclude Include="src\Features\OWOBase\OWOBase.h" />
     <ClInclude Include="src\SDK\Definitions\Main\CBaseTeamObjectiveResource.h" />
     <ClInclude Include="src\Features\AutoJoin\AutoJoin.h" />
     <ClInclude Include="src\SDK\Definitions\Interfaces\CServerTools.h" />
