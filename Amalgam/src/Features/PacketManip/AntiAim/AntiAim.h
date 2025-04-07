@@ -14,8 +14,22 @@ private:
 
 	float GetPitch(float flCurPitch);
 	void MinWalk(CTFPlayer* pLocal, CUserCmd* pCmd);
+	
+	float GetBigRandomYaw();
+	float GetBigRandomPitch();
+
+	float GetFlipPitch();
+	float m_flLastFlipTime = 0.0f;
+	bool m_bFlipState = false; // false = up, true = down
+	
+	float m_flBigRandomYawSpeed = 0.0f;
+	float m_flBigRandomPitchSpeed = 0.0f;
+	float m_flNextBigRandomUpdate = 0.0f;
 
 public:
+	// Constructor
+	CAntiAim();
+	
 	bool AntiAimOn();
 	bool YawOn();
 	bool ShouldRun(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCmd);

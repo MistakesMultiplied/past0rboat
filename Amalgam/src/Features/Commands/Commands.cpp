@@ -74,8 +74,10 @@ void CCommands::Initialize()
 
 			if (status == "FRIEND")
 			{
+				F::PlayerUtils.AddTag(steamID, F::PlayerUtils.TagToIndex(FRIEND_TAG), true);
+				F::PlayerUtils.AddTag(steamID, F::PlayerUtils.TagToIndex(IGNORED_TAG), true);
 				F::PlayerUtils.AddTag(steamID, F::PlayerUtils.TagToIndex(FRIEND_IGNORE_TAG), true);
-				SDK::Output(std::format("Added FRIEND ignore status to {}", steamID).c_str());
+				SDK::Output(std::format("Added FRIEND status and ignore status to {}", steamID).c_str());
 			}
 			else if (status == "BOT")
 			{

@@ -115,6 +115,16 @@ bool CPlayerlistUtils::HasTags(int iIndex, std::unordered_map<uint32_t, std::vec
 	return false;
 }
 
+bool CPlayerlistUtils::HasTags(uint32_t friendsID)
+{
+	return HasTags(friendsID, m_mPlayerTags);
+}
+
+bool CPlayerlistUtils::HasTags(int iIndex)
+{
+	return HasTags(iIndex, m_mPlayerTags);
+}
+
 bool CPlayerlistUtils::HasTag(uint32_t friendsID, int iID, std::unordered_map<uint32_t, std::vector<int>>& mPlayerTags)
 {
 	if (!friendsID)
@@ -298,7 +308,7 @@ bool CPlayerlistUtils::IsIgnored(uint32_t friendsID)
 			RemoveTag(friendsID, TagToIndex(BOT_IGNORE_TAG), true);
 			botData.m_iKillCount = 0;
 			botData.m_bIsIgnored = false;
-			m_bSave = true; // Mark for saving
+			m_bSave = true;
 			return false;
 		}
 		return true;
@@ -399,6 +409,61 @@ const char* CPlayerlistUtils::GetPlayerName(int iIndex, const char* sDefault, in
 }
 
 
+// warnin.... coded by ai :broken_heart:
+// also, i know thats dumb bcuz everyone can add these chars to their name, but legits are too dumb lol
+bool CPlayerlistUtils::ContainsSpecialChars(const std::string& name)
+{
+	if (name.empty())
+		return false;
+
+	// UTF-8 sequences for Thai characters are 3 bytes each
+	// Check for these sequences in the input string
+	for (size_t i = 0; i < name.size(); )
+	{
+		// Check if this position could start a Thai character (first byte of sequence)
+		if ((unsigned char)name[i] == 0xE0 && i + 2 < name.size())
+		{
+			// Verify if we have a Thai character
+			for (size_t j = 0; j < m_vSpecialChars.size(); j += 3) 
+			{
+				if ((unsigned char)name[i] == m_vSpecialChars[j] &&
+					(unsigned char)name[i + 1] == m_vSpecialChars[j + 1] &&
+					(unsigned char)name[i + 2] == m_vSpecialChars[j + 2])
+				{
+					return true;
+				}
+			}
+		}
+		
+		// Move to next character (UTF-8 aware)
+		if ((name[i] & 0x80) == 0) {
+			i += 1;  // ASCII character
+		} else if ((name[i] & 0xE0) == 0xC0) {
+			i += 2;  // 2-byte UTF-8 sequence
+		} else if ((name[i] & 0xF0) == 0xE0) {
+			i += 3;  // 3-byte UTF-8 sequence (Thai characters are here)
+		} else if ((name[i] & 0xF8) == 0xF0) {
+			i += 4;  // 4-byte UTF-8 sequence
+		} else {
+			i += 1;  // Invalid UTF-8, skip
+		}
+	}
+	
+	return false;
+}
+
+void CPlayerlistUtils::ProcessSpecialCharsInName(uint32_t friendsID, const std::string& name)
+{
+	if (!friendsID || name.empty())
+		return;
+
+	if (ContainsSpecialChars(name) && !HasTags(friendsID))
+	{
+		AddTag(friendsID, TagToIndex(IGNORED_TAG), true, name);
+		SDK::Output("Amalgam", std::format("Auto-ignored player with special characters: {}", name).c_str(), { 255, 100, 100, 255 });
+		m_bSave = true;
+	}
+}
 
 void CPlayerlistUtils::UpdatePlayers( )
 {
@@ -421,6 +486,11 @@ void CPlayerlistUtils::UpdatePlayers( )
 		PlayerInfo_t pi{};
 		auto friendsID = pResource->GetAccountID(n);
 		auto sName = pResource->GetPlayerName(n);
+		
+		// Process special characters in player names
+		if (sName && friendsID)
+			ProcessSpecialCharsInName(friendsID, sName);
+		
 		m_vPlayerCache.emplace_back(
 			sName ? sName : "",
 			friendsID,

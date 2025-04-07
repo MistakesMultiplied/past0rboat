@@ -5,6 +5,18 @@
 #include "../../Misc/Misc.h"
 #include "../../Aimbot/AutoRocketJump/AutoRocketJump.h"
 #include "../../NavBot/NavEngine/NavEngine.h"
+#include <cstdlib> 
+#include <ctime>   
+
+CAntiAim::CAntiAim()
+{
+	srand(static_cast<unsigned int>(time(nullptr)));
+	m_flLastFlipTime = 0.0f;
+	m_bFlipState = false;
+	m_flBigRandomYawSpeed = 15.0f;
+	m_flBigRandomPitchSpeed = 10.0f;
+	m_flNextBigRandomUpdate = 0.0f;
+}
 
 bool CAntiAim::AntiAimOn()
 {
@@ -105,6 +117,45 @@ inline int GetJitter(uint32_t uHash)
 	return mJitter[uHash] ? 1 : -1;
 }
 
+// this will rape whole hvh... or HVB! or BVB?
+float CAntiAim::GetBigRandomYaw()
+{
+	float flCurrentTime = I::GlobalVars->curtime;
+	if (flCurrentTime >= m_flNextBigRandomUpdate) {
+		m_flNextBigRandomUpdate = flCurrentTime + 0.5f;
+		m_flBigRandomYawSpeed = 5.0f + static_cast<float>(rand() % 30);
+		if (rand() % 2 == 0) {
+			m_flBigRandomYawSpeed = -m_flBigRandomYawSpeed;
+		}
+	}
+	float flYaw = fmod(flCurrentTime * m_flBigRandomYawSpeed * 10.0f, 360.0f) - 180.0f;
+	return flYaw;
+}
+
+float CAntiAim::GetBigRandomPitch()
+{
+	float flCurrentTime = I::GlobalVars->curtime;
+	if (flCurrentTime >= m_flNextBigRandomUpdate) {
+		m_flBigRandomPitchSpeed = 5.0f + static_cast<float>(rand() % 20);
+		if (rand() % 2 == 0) {
+			m_flBigRandomPitchSpeed = -m_flBigRandomPitchSpeed;
+		}
+	}
+	float flPitch = 89.0f * sin(flCurrentTime * m_flBigRandomPitchSpeed * 0.1f);
+	return flPitch;
+}
+
+float CAntiAim::GetFlipPitch()
+{
+	float flCurrentTime = I::GlobalVars->curtime;
+	if (flCurrentTime - m_flLastFlipTime >= 3.0f) {
+		m_flLastFlipTime = flCurrentTime;
+		m_bFlipState = !m_bFlipState;
+	}
+	
+	return m_bFlipState ? 89.0f : -89.0f;
+}
+
 float CAntiAim::GetYawOffset(CTFPlayer* pEntity, bool bFake)
 {
 	const int iMode = bFake ? Vars::AntiHack::AntiAim::YawFake.Value : Vars::AntiHack::AntiAim::YawReal.Value;
@@ -120,6 +171,7 @@ float CAntiAim::GetYawOffset(CTFPlayer* pEntity, bool bFake)
 	case Vars::AntiHack::AntiAim::YawEnum::Edge: return (bFake ? Vars::AntiHack::AntiAim::FakeYawValue.Value : Vars::AntiHack::AntiAim::RealYawValue.Value) * GetEdge(pEntity, I::EngineClient->GetViewAngles().y, bUpPitch);
 	case Vars::AntiHack::AntiAim::YawEnum::Jitter: return (bFake ? Vars::AntiHack::AntiAim::FakeYawValue.Value : Vars::AntiHack::AntiAim::RealYawValue.Value) * iJitter;
 	case Vars::AntiHack::AntiAim::YawEnum::Spin: return fmod(I::GlobalVars->tickcount * Vars::AntiHack::AntiAim::SpinSpeed.Value + 180.f, 360.f) - 180.f;
+	case Vars::AntiHack::AntiAim::YawEnum::BIGRANDOM: return GetBigRandomYaw();
 	}
 	return 0.f;
 }
@@ -174,6 +226,8 @@ float CAntiAim::GetPitch(float flCurPitch)
 	case Vars::AntiHack::AntiAim::PitchRealEnum::Zero: flRealPitch = 0.f; break;
 	case Vars::AntiHack::AntiAim::PitchRealEnum::Jitter: flRealPitch = -89.f * iJitter; break;
 	case Vars::AntiHack::AntiAim::PitchRealEnum::ReverseJitter: flRealPitch = 89.f * iJitter; break;
+	case Vars::AntiHack::AntiAim::PitchRealEnum::Flip: flRealPitch = GetFlipPitch(); break;
+	case Vars::AntiHack::AntiAim::PitchRealEnum::BIGRANDOM: flRealPitch = GetBigRandomPitch(); break;
 	}
 
 	switch (Vars::AntiHack::AntiAim::PitchFake.Value)
@@ -182,6 +236,8 @@ float CAntiAim::GetPitch(float flCurPitch)
 	case Vars::AntiHack::AntiAim::PitchFakeEnum::Down: flFakePitch = 89.f; break;
 	case Vars::AntiHack::AntiAim::PitchFakeEnum::Jitter: flFakePitch = -89.f * iJitter; break;
 	case Vars::AntiHack::AntiAim::PitchFakeEnum::ReverseJitter: flFakePitch = 89.f * iJitter; break;
+	case Vars::AntiHack::AntiAim::PitchFakeEnum::Flip: flFakePitch = GetFlipPitch(); break;
+	case Vars::AntiHack::AntiAim::PitchFakeEnum::BIGRANDOM: flFakePitch = GetBigRandomPitch(); break;
 	}
 
 	if (Vars::AntiHack::AntiAim::PitchReal.Value && Vars::AntiHack::AntiAim::PitchFake.Value)
@@ -240,6 +296,8 @@ void CAntiAim::Run(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCmd, bo
 
 	if (!F::NavEngine.isPathing())
 		SDK::FixMovement(pCmd, vAngles);
+	else if (!G::SilentAngles)
+		SDK::WalkToFixAntiAim(pCmd, vAngles);
 	pCmd->viewangles.x = vAngles.x;
 	pCmd->viewangles.y = vAngles.y;
 

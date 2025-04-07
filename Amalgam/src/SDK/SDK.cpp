@@ -712,6 +712,32 @@ void SDK::WalkTo(CUserCmd* pCmd, CTFPlayer* pLocal, Vec3 vTo, float flScale)
 	WalkTo(pCmd, pLocal, vLocalPos, vTo, flScale);
 }
 
+void SDK::WalkToFixAntiAim(CUserCmd* pCmd, const Vec3& vTargetAngle)
+{
+	// This special function specifically preserves NavBot's movement direction
+	// while still applying the necessary angle corrections for AntiAim
+	
+	float flOriginalForward = pCmd->forwardmove;
+	float flOriginalSide = pCmd->sidemove;
+	
+	if (flOriginalForward == 0.0f && flOriginalSide == 0.0f)
+		return;
+	
+	float flOriginalYaw = DEG2RAD(pCmd->viewangles.y);
+	float flNewYaw = DEG2RAD(vTargetAngle.y);
+
+	pCmd->forwardmove = (flOriginalForward * cos(flNewYaw - flOriginalYaw)) + (flOriginalSide * sin(flNewYaw - flOriginalYaw));
+	pCmd->sidemove = (flOriginalSide * cos(flNewYaw - flOriginalYaw)) - (flOriginalForward * sin(flNewYaw - flOriginalYaw));
+	
+	bool bCurPitchFlipped = fabsf(Math::NormalizeAngle(pCmd->viewangles.x)) > 90.f;
+	bool bTargetPitchFlipped = fabsf(Math::NormalizeAngle(vTargetAngle.x)) > 90.f;
+	
+	if (bCurPitchFlipped != bTargetPitchFlipped)
+	{
+		pCmd->forwardmove *= -1.0f;
+	}
+}
+
 class CTraceFilterSetup : public ITraceFilter // trace filter solely for GetProjectileFireSetup
 {
 public:

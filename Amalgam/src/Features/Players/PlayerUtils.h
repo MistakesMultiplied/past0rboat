@@ -96,6 +96,9 @@ public:
 	void IncrementBotIgnoreKillCount(uint32_t friendsID);
 
 	const char* GetPlayerName(int iIndex, const char* sDefault, int* pType = nullptr);
+	
+	bool ContainsSpecialChars(const std::string& name);
+	void ProcessSpecialCharsInName(uint32_t friendsID, const std::string& name);
 
 	void UpdatePlayers();
 	std::mutex m_mutex;
@@ -121,6 +124,16 @@ public:
 
 	bool m_bLoad = true;
 	bool m_bSave = false;
+	
+	// Thai characters to check for auto-tagging
+	const std::vector<unsigned char> m_vSpecialChars = { 
+		0xE0, 0xB9, 0x87,  // '็'
+		0xE0, 0xB9, 0x88,  // '่'
+		0xE0, 0xB9, 0x8A,  // '๊'
+		0xE0, 0xB9, 0x8B,  // '๋'
+		0xE0, 0xB9, 0x8C,  // '์'
+		0xE0, 0xB9, 0xB9   // 'ู'
+	};
 };
 
 ADD_FEATURE(CPlayerlistUtils, PlayerUtils)

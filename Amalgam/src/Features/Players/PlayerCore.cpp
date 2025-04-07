@@ -15,7 +15,7 @@ void CPlayerlistCore::Run()
 
 void CPlayerlistCore::SavePlayerlist()
 {
-	if (!F::PlayerUtils.m_bSave || F::PlayerUtils.m_bLoad) // terrible if we end up saving while loading
+	if (!F::PlayerUtils.m_bSave || F::PlayerUtils.m_bLoad) // terrible if we end up saving while loading :steamsad:
 		return;
 
 	try
