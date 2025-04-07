@@ -150,6 +150,7 @@ void CMenu::MenuAimbot(int iTab)
 				FToggle("Always melee crit", Vars::CritHack::AlwaysMeleeCrit, FToggle_Left);
 				FToggle("No spread", Vars::Aimbot::General::NoSpread, FToggle_Right);
 				FToggle("Prioritize navbot target", Vars::Aimbot::General::PrioritizeNavbot, FToggle_Left);
+				FSlider("Target validity time", Vars::Aimbot::General::TargetValidityTime, 0.05f, 1.0f, 0.05f, "%g", FSlider_Left | FSlider_Min | FSlider_Precision);
 			} EndSection();
 			if (Vars::Debug::Options.Value)
 			{

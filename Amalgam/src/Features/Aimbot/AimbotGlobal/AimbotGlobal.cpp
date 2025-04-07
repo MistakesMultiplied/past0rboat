@@ -28,16 +28,46 @@ void CAimbotGlobal::SortPriority(std::vector<Target_t>* targets)
 // this won't prevent shooting bones outside of fov
 bool CAimbotGlobal::PlayerBoneInFOV(CTFPlayer* pTarget, Vec3 vLocalPos, Vec3 vLocalAngles, float& flFOVTo, Vec3& vPos, Vec3& vAngleTo, int iHitboxes)
 {
-	float flMinFOV = 180.f;
-	for (int nHitbox = 0; nHitbox < pTarget->GetNumOfHitboxes(); nHitbox++)
+	// Early out if FOV is set to 360 (any target within this range will be valid)
+	if (Vars::Aimbot::General::AimFOV.Value >= 360.f)
 	{
-		if (!IsHitboxValid(H::Entities.GetModel(pTarget->entindex()), nHitbox, iHitboxes))
-			continue;
+		vPos = pTarget->GetCenter();
+		vAngleTo = Math::CalcAngle(vLocalPos, vPos);
+		flFOVTo = 0.f;
+		return true;
+	}
 
-		Vec3 vCurPos = pTarget->GetHitboxCenter(nHitbox);
+	float flMinFOV = 180.f;
+	uint32_t uModelHash = H::Entities.GetModel(pTarget->entindex());
+	
+	// Pre-check if hitboxes
+	if (!(iHitboxes & (Vars::Aimbot::Hitscan::HitboxesEnum::Head | 
+	                    Vars::Aimbot::Hitscan::HitboxesEnum::Body | 
+	                    Vars::Aimbot::Hitscan::HitboxesEnum::Pelvis | 
+	                    Vars::Aimbot::Hitscan::HitboxesEnum::Arms | 
+	                    Vars::Aimbot::Hitscan::HitboxesEnum::Legs)))
+	{
+		return false;
+	}
+
+	// Prioritize head hitbox check first to potentially exit early
+	if (iHitboxes & Vars::Aimbot::Hitscan::HitboxesEnum::Head)
+	{
+		int nHeadHitbox = (uModelHash == FNV1A::Hash32Const("models/vsh/player/saxton_hale.mdl")) ? 
+		                  HITBOX_SAXTON_HEAD : HITBOX_HEAD;
+		
+		Vec3 vCurPos = pTarget->GetHitboxCenter(nHeadHitbox);
 		Vec3 vCurAngleTo = Math::CalcAngle(vLocalPos, vCurPos);
 		float flCurFOVTo = Math::CalcFov(vLocalAngles, vCurAngleTo);
 
+		if (flCurFOVTo < Vars::Aimbot::General::AimFOV.Value)
+		{
+			vPos = vCurPos;
+			vAngleTo = vCurAngleTo;
+			flFOVTo = flCurFOVTo;
+			return true;
+		}
+		
 		if (flCurFOVTo < flMinFOV)
 		{
 			vPos = vCurPos;
@@ -46,7 +76,74 @@ bool CAimbotGlobal::PlayerBoneInFOV(CTFPlayer* pTarget, Vec3 vLocalPos, Vec3 vLo
 		}
 	}
 
-	return flMinFOV < Vars::Aimbot::General::AimFOV.Value || Vars::Aimbot::General::AimFOV.Value >= 360.f;
+	// Then check body hitboxes as they're commonly targeted
+	if (iHitboxes & Vars::Aimbot::Hitscan::HitboxesEnum::Body)
+	{
+		const int bodyHitboxes[] = {
+			(uModelHash == FNV1A::Hash32Const("models/vsh/player/saxton_hale.mdl")) ? 
+			HITBOX_SAXTON_BODY : HITBOX_BODY,
+			(uModelHash == FNV1A::Hash32Const("models/vsh/player/saxton_hale.mdl")) ? 
+			HITBOX_SAXTON_CHEST : HITBOX_CHEST
+		};
+		
+		for (int nHitbox : bodyHitboxes)
+		{
+			Vec3 vCurPos = pTarget->GetHitboxCenter(nHitbox);
+			Vec3 vCurAngleTo = Math::CalcAngle(vLocalPos, vCurPos);
+			float flCurFOVTo = Math::CalcFov(vLocalAngles, vCurAngleTo);
+
+			if (flCurFOVTo < Vars::Aimbot::General::AimFOV.Value)
+			{
+				vPos = vCurPos;
+				vAngleTo = vCurAngleTo;
+				flFOVTo = flCurFOVTo;
+				return true;
+			}
+			
+			if (flCurFOVTo < flMinFOV)
+			{
+				vPos = vCurPos;
+				vAngleTo = vCurAngleTo;
+				flFOVTo = flMinFOV = flCurFOVTo;
+			}
+		}
+	}
+	
+	// Then check remaining hitboxes
+	for (int nHitbox = 0; nHitbox < pTarget->GetNumOfHitboxes(); nHitbox++)
+	{
+		// Skip hitboxes we've already checked
+		if ((uModelHash == FNV1A::Hash32Const("models/vsh/player/saxton_hale.mdl") && 
+		    (nHitbox == HITBOX_SAXTON_HEAD || nHitbox == HITBOX_SAXTON_BODY || nHitbox == HITBOX_SAXTON_CHEST)) ||
+		    (nHitbox == HITBOX_HEAD || nHitbox == HITBOX_BODY || nHitbox == HITBOX_CHEST))
+		{
+			continue;
+		}
+		
+		if (!IsHitboxValid(uModelHash, nHitbox, iHitboxes))
+			continue;
+
+		Vec3 vCurPos = pTarget->GetHitboxCenter(nHitbox);
+		Vec3 vCurAngleTo = Math::CalcAngle(vLocalPos, vCurPos);
+		float flCurFOVTo = Math::CalcFov(vLocalAngles, vCurAngleTo);
+
+		if (flCurFOVTo < Vars::Aimbot::General::AimFOV.Value)
+		{
+			vPos = vCurPos;
+			vAngleTo = vCurAngleTo;
+			flFOVTo = flCurFOVTo;
+			return true;
+		}
+		
+		if (flCurFOVTo < flMinFOV)
+		{
+			vPos = vCurPos;
+			vAngleTo = vCurAngleTo;
+			flFOVTo = flMinFOV = flCurFOVTo;
+		}
+	}
+
+	return flMinFOV < Vars::Aimbot::General::AimFOV.Value;
 }
 
 bool CAimbotGlobal::PlayerPosInFOV( CTFPlayer* pTarget, Vec3 vLocalPos, Vec3 vLocalAngles, float& flFOVTo, Vec3& vPos, Vec3& vAngleTo )
@@ -312,4 +409,55 @@ bool CAimbotGlobal::ValidBomb(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CBaseEn
 	}
 
 	return false;
+}
+
+bool CAimbotGlobal::IsTargetStillValid(const Target_t& target, float flMaxValidityTime)
+{
+	if (!target.m_pEntity)
+		return false;
+	float flCurrentTime = I::GlobalVars->curtime;
+	float flValidityTime = flMaxValidityTime > 0.0f ? flMaxValidityTime : Vars::Aimbot::General::TargetValidityTime.Value;
+	if (flCurrentTime - target.m_flLastValidTime > flValidityTime)
+		return false;
+		
+	switch (target.m_iTargetType)
+	{
+	case TargetEnum::Player:
+	{
+		auto pPlayer = target.m_pEntity->As<CTFPlayer>();
+		if (!pPlayer || !pPlayer->IsAlive() || pPlayer->IsAGhost())
+			return false;
+		break;
+	}
+	case TargetEnum::Sentry:
+	case TargetEnum::Dispenser:
+	case TargetEnum::Teleporter:
+	{
+		auto pBuilding = target.m_pEntity->As<CBaseObject>();
+		if (!pBuilding || pBuilding->m_bPlacing() || pBuilding->m_bCarried())
+			return false;
+		break;
+	}
+	case TargetEnum::Sticky:
+	{
+		auto pSticky = target.m_pEntity->As<CTFGrenadePipebombProjectile>();
+		if (!pSticky || pSticky->m_iType() != TF_GL_MODE_REMOTE_DETONATE || !pSticky->m_bTouched())
+			return false;
+		break;
+	}
+	case TargetEnum::NPC:
+	{
+		// NPCs only need to be alive/active - no specific checks needed beyond the base pointer check
+		break;
+	}
+	case TargetEnum::Bomb:
+	{
+		// For bombs, just ensure the entity still exists (handled by null check above)
+		break;
+	}
+	default:
+		break;
+	}
+
+	return true;
 }

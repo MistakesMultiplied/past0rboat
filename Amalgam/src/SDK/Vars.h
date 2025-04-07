@@ -226,6 +226,7 @@ namespace Vars
 			CVar(NoSpreadInterval, 0.1f, DEBUGVAR)
 			CVar(NoSpreadBackupInterval, 2.f, DEBUGVAR)
 			CVarEnum(AimHoldsFire, 2, DEBUGVAR, False, MinigunOnly, Always)
+			CVar(TargetValidityTime, 0.2f, NONE)
 		SUBNAMESPACE_END(Global)
 
 		SUBNAMESPACE_BEGIN(Hitscan)
