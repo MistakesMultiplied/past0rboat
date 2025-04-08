@@ -15,7 +15,7 @@
 bool CEventListener::Initialize()
 {
 	std::vector<const char*> vEvents = { 
-		"client_beginconnect", "client_connected", "client_disconnect", "game_newmap", "teamplay_round_start", "player_connect_client", "player_spawn", "player_death", "player_changeclass", "player_hurt", "vote_cast", "item_pickup", "revive_player_notify", "vote_maps_changed"
+		"client_beginconnect", "client_connected", "client_disconnect", "game_newmap", "teamplay_round_start", "player_connect_client", "player_spawn", "player_changeclass", "player_hurt", "vote_cast", "item_pickup", "revive_player_notify"
 	};
 
 	for (auto szEvent : vEvents)
@@ -66,24 +66,6 @@ void CEventListener::FireGameEvent(IGameEvent* pEvent)
 		F::Killstreak.PlayerSpawn(pEvent);
 #endif
 		break;
-#ifndef TEXTMODE
-	case FNV1A::Hash32Const("player_death"):
-		F::Killstreak.PlayerDeath(pEvent);
-		{
-			const int attacker = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
-			const int userid = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
-
-			if (attacker == I::EngineClient->GetLocalPlayer())
-			{
-				PlayerInfo_t pi{};
-				if (I::EngineClient->GetPlayerInfo(userid, &pi))
-				{
-					F::PlayerUtils.IncrementBotIgnoreKillCount(pi.friendsID);
-				}
-			}
-		}
-		break;
-#endif
 	case FNV1A::Hash32Const("revive_player_notify"):
 	{
 		if (!Vars::Misc::MannVsMachine::InstantRevive.Value || pEvent->GetInt("entindex") != I::EngineClient->GetLocalPlayer())

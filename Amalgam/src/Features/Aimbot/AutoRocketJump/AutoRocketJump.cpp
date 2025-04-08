@@ -103,7 +103,7 @@ bool CAutoRocketJump::SetAngles(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUser
 
 void CAutoRocketJump::Run(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCmd)
 {
-	if (!pLocal || !pWeapon || !pCmd || !pLocal->IsAlive() || pLocal->IsAGhost() || I::EngineVGui->IsGameUIVisible())
+	if (!pLocal || !pWeapon || !pCmd || !pLocal->IsAlive() || pLocal->IsAGhost() || I::EngineVGui->IsGameUIVisible() || I::MatSystemSurface->IsCursorVisible())
 	{
 		m_iFrame = -1;
 		return;

@@ -60,7 +60,9 @@ void CMovementSimulation::Store(PlayerStorage& tStorage)
 void CMovementSimulation::Reset(PlayerStorage& tStorage)
 {
 	tStorage.m_pPlayer->m_vecOrigin() = tStorage.m_PlayerData.m_vecOrigin;
+	tStorage.m_pPlayer->SetAbsOrigin(tStorage.m_PlayerData.m_vecOrigin);
 	tStorage.m_pPlayer->m_vecVelocity() = tStorage.m_PlayerData.m_vecVelocity;
+	tStorage.m_pPlayer->SetAbsVelocity(tStorage.m_PlayerData.m_vecVelocity);
 	tStorage.m_pPlayer->m_vecBaseVelocity() = tStorage.m_PlayerData.m_vecBaseVelocity;
 	tStorage.m_pPlayer->m_vecViewOffset() = tStorage.m_PlayerData.m_vecViewOffset;
 	tStorage.m_pPlayer->m_hGroundEntity() = tStorage.m_PlayerData.m_hGroundEntity;
