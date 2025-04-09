@@ -200,9 +200,10 @@ MAKE_HOOK(CClientModeShared_CreateMove, U::Memory.GetVFunc(I::ClientModeShared, 
 	F::EnginePrediction.End(pLocal, pCmd);
 
 	F::CritHack.Run(pLocal, pWeapon, pCmd);
-	F::Misc.RunPost(pLocal, pCmd, *pSendPacket);
 	F::PacketManip.Run(pLocal, pWeapon, pCmd, pSendPacket);
+	F::Ticks.CreateMove(pLocal, pCmd);
 	F::NoSpread.Run(pLocal, pWeapon, pCmd);
+	F::Misc.RunPost(pLocal, pCmd, *pSendPacket);
 	F::Resolver.CreateMove(pLocal);
 #ifndef TEXTMODE
 	F::Visuals.CreateMove(pLocal, pWeapon);
@@ -216,7 +217,7 @@ MAKE_HOOK(CClientModeShared_CreateMove, U::Memory.GetVFunc(I::ClientModeShared, 
 		else if (bWasSet || !bCanChoke)
 			*pSendPacket = true, bWasSet = false;
 	}
-	F::Ticks.CreateMove(pLocal, pCmd, pSendPacket);
+	F::Ticks.ManagePacket(pCmd, pSendPacket);
 	F::AntiAim.Run(pLocal, pWeapon, pCmd, *pSendPacket);
 
 #ifndef TEXTMODE

@@ -39,7 +39,7 @@ void CPlayerlistCore::SavePlayerlist()
 		writeTree.put_child("Config", configTree);
 
 		boost::property_tree::ptree tagTree;
-		for (auto& [uFriendsID, vTags] : F::PlayerUtils.m_mPlayerTags)
+		for (auto& [friendsID, vTags] : F::PlayerUtils.m_mPlayerTags)
 		{
 			if (vTags.empty())
 				continue;
@@ -51,17 +51,17 @@ void CPlayerlistCore::SavePlayerlist()
 				tagList.push_back(std::make_pair("", child));
 			}
 
-			tagTree.put_child(std::to_string(uFriendsID), tagList);
+			tagTree.put_child(std::to_string(friendsID), tagList);
 		}
 		writeTree.put_child("Tags", tagTree);
 
 		boost::property_tree::ptree aliasTree;
-		for (auto& [uFriendsID, sAlias] : F::PlayerUtils.m_mPlayerAliases)
+		for (auto& [friendsID, sAlias] : F::PlayerUtils.m_mPlayerAliases)
 		{
 			if (sAlias.empty())
 				continue;
 
-			aliasTree.put(std::to_string(uFriendsID), sAlias);
+			aliasTree.put(std::to_string(friendsID), sAlias);
 		}
 		writeTree.put_child("Aliases", aliasTree);
 
@@ -195,7 +195,7 @@ void CPlayerlistCore::LoadPlayerlist()
 			
 			for (auto& player : *tagTree)
 			{
-				uint32_t uFriendsID = std::stoi(player.first);
+				uint32_t friendsID = std::stoi(player.first);
 
 				for (auto& tag : player.second)
 				{
@@ -222,8 +222,8 @@ void CPlayerlistCore::LoadPlayerlist()
 					if (!pTag || !pTag->Assignable)
 						continue;
 
-					if (!F::PlayerUtils.HasTag(uFriendsID, iID))
-						F::PlayerUtils.AddTag(uFriendsID, iID, false);
+					if (!F::PlayerUtils.HasTag(friendsID, iID))
+						F::PlayerUtils.AddTag(friendsID, iID, false);
 				}
 			}
 
@@ -231,11 +231,11 @@ void CPlayerlistCore::LoadPlayerlist()
 			{
 				for (auto& player : *aliasTree)
 				{
-					uint32_t uFriendsID = std::stoi(player.first);
+					uint32_t friendsID = std::stoi(player.first);
 					std::string sAlias = player.second.data();
 
 					if (!sAlias.empty())
-						F::PlayerUtils.m_mPlayerAliases[uFriendsID] = player.second.data();
+						F::PlayerUtils.m_mPlayerAliases[friendsID] = player.second.data();
 				}
 			}
 			

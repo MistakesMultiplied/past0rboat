@@ -8,7 +8,7 @@ private:
 	{
 		std::string m_sName;
 		std::string m_sMode;
-		float m_flRespawnIn;
+		int m_iRespawnIn;
 		bool m_bRespawnTimeIncreased;
 		bool m_bIsFriend;
 		bool m_bInParty;

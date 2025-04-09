@@ -5,21 +5,17 @@
 
 class CTickshiftHandler
 {
-	void CLMoveFunc(float accumulated_extra_samples, bool bFinalTick);
-
 	void Recharge(CTFPlayer* pLocal);
 	void Warp();
 	void Doubletap(CTFPlayer* pLocal, CUserCmd* pCmd);
 	void Speedhack();
 	bool ValidWeapon(CTFWeaponBase* pWeapon);
 
-	void ManagePacket(CUserCmd* pCmd, bool* pSendPacket);
+	void CLMoveFunc(float accumulated_extra_samples, bool bFinalTick);
 
 	bool m_bGoalReached = true;
 	Vec3 m_vShootPos = {};
 
-	bool m_bShootAngle = false;
-	Vec3 m_vShootAngle = {};
 public:
 	void Run(float accumulated_extra_samples, bool bFinalTick, CTFPlayer* pLocal);
 	void Reset();
@@ -27,18 +23,18 @@ public:
 	void CLMove(float accumulated_extra_samples, bool bFinalTick);
 	void CLMoveManage(CTFPlayer* pLocal);
 
-	void CreateMove(CTFPlayer* pLocal, CUserCmd* pCmd, bool* pSendPacket);
-	void AntiWarp(CTFPlayer* pLocal, CUserCmd* pCmd);
+	void CreateMove(CTFPlayer* pLocal, CUserCmd* pCmd);
 
+	void ManagePacket(CUserCmd* pCmd, bool* pSendPacket);
 	int GetTicks(CTFWeaponBase* pWeapon = nullptr);
 	int GetShotsWithinPacket(CTFWeaponBase* pWeapon, int iTicks = Vars::CL_Move::Doubletap::TickLimit.Value);
 	int GetMinimumTicksNeeded(CTFWeaponBase* pWeapon);
-	bool CanChoke();
 
+	void AntiWarp(CTFPlayer* pLocal, CUserCmd* pCmd);
 	void SaveShootPos(CTFPlayer* pLocal);
 	Vec3 GetShootPos();
-	void SaveShootAngle(CUserCmd* pCmd, bool bSendPacket);
-	Vec3* GetShootAngle();
+
+	bool CanChoke();
 
 	bool m_bDoubletap = false;
 	bool m_bWarp = false;

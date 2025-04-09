@@ -146,8 +146,10 @@ void CCore::Unload()
 			pLocal->ThirdPersonSwitch();
 		}
 	}
-	U::ConVars.FindVar("cl_wpn_sway_interp")->SetValue(0.f);
-	U::ConVars.FindVar("cl_wpn_sway_scale")->SetValue(0.f);
+	if (auto cl_wpn_sway_interp = U::ConVars.FindVar("cl_wpn_sway_interp"))
+		cl_wpn_sway_interp->SetValue(0.f);
+	if (auto cl_wpn_sway_scale = U::ConVars.FindVar("cl_wpn_sway_scale"))
+		cl_wpn_sway_scale->SetValue(0.f);
 
 	Sleep(250);
 	F::NamedPipe::Shutdown();

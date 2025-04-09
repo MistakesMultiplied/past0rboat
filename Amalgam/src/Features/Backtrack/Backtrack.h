@@ -38,7 +38,6 @@ struct TickRecord
 	Vec3 m_vMins = {};
 	Vec3 m_vMaxs = {};
 	bool m_bOnShot = false;
-	Vec3 m_vBreak = {};
 	bool m_bInvalid = false;
 };
 

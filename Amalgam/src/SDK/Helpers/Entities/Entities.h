@@ -91,15 +91,15 @@ public:
 	std::deque<VelFixRecord>* GetOrigins(int iIndex);
 
 	bool IsFriend(int iIndex);
-	bool IsFriend(uint32_t uFriendsID);
+	bool IsFriend(uint32_t friendsID);
 	bool InParty(int iIndex);
-	bool InParty(uint32_t uFriendsID);
+	bool InParty(uint32_t friendsID);
 	bool IsF2P(int iIndex);
-	bool IsF2P(uint32_t uFriendsID);
+	bool IsF2P(uint32_t friendsID);
 	int GetLevel(int iIndex);
-	int GetLevel(uint32_t uFriendsID);
+	int GetLevel(uint32_t friendsID);
 	int GetPriority(int iIndex);
-	int GetPriority(uint32_t uFriendsID);
+	int GetPriority(uint32_t friendsID);
 
 	bool IsSettingUpBones();
 };

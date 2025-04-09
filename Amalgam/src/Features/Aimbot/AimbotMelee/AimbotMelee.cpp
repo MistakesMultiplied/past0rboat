@@ -93,9 +93,9 @@ bool CAimbotMelee::AimFriendlyBuilding(CBaseObject* pBuilding)
 std::vector<Target_t> CAimbotMelee::SortTargets(CTFPlayer* pLocal, CTFWeaponBase* pWeapon)
 {
 	auto vTargets = GetTargets(pLocal, pWeapon);
-	F::AimbotGlobal.SortTargets(vTargets, Vars::Aimbot::General::TargetSelectionEnum::Distance);
+	F::AimbotGlobal.SortTargets(&vTargets, Vars::Aimbot::General::TargetSelectionEnum::Distance);
 	vTargets.resize(std::min(size_t(Vars::Aimbot::General::MaxTargets.Value), vTargets.size()));
-	F::AimbotGlobal.SortPriority(vTargets);
+	F::AimbotGlobal.SortPriority(&vTargets);
 	return vTargets;
 }
 
@@ -274,7 +274,7 @@ int CAimbotMelee::CanHit(Target_t& tTarget, CTFPlayer* pLocal, CTFWeaponBase* pW
 	std::deque<TickRecord> vRecords;
 	{
 		auto pRecords = F::Backtrack.GetRecords(tTarget.m_pEntity);
-		if (pRecords)
+		if (pRecords && tTarget.m_iTargetType == TargetEnum::Player)
 		{
 			if (Vars::Backtrack::Enabled.Value)
 				vRecords = *pRecords;
@@ -284,9 +284,6 @@ int CAimbotMelee::CanHit(Target_t& tTarget, CTFPlayer* pLocal, CTFWeaponBase* pW
 				if (!vRecords.empty())
 					vRecords = { vRecords.front() };
 			}
-
-			if (vRecords.empty())
-				return false;
 		}
 		if (!pRecords || vRecords.empty())
 		{
@@ -329,7 +326,7 @@ int CAimbotMelee::CanHit(Target_t& tTarget, CTFPlayer* pLocal, CTFWeaponBase* pW
 
 		Vec3 vDiff = { 0, 0, std::clamp(vEyePos.z - tRecord.m_vOrigin.z, tTarget.m_pEntity->m_vecMins().z, tTarget.m_pEntity->m_vecMaxs().z) };
 		tTarget.m_vPos = tRecord.m_vOrigin + vDiff;
-		Aim(G::CurrentUserCmd->viewangles, Math::CalcAngle(vEyePos, tTarget.m_vPos), tTarget.m_vAngleTo);
+		tTarget.m_vAngleTo = Aim(G::CurrentUserCmd->viewangles, Math::CalcAngle(vEyePos, tTarget.m_vPos));
 
 		Vec3 vForward; Math::AngleVectors(tTarget.m_vAngleTo, &vForward);
 		Vec3 vTraceEnd = vEyePos + (vForward * flRange);
@@ -381,13 +378,9 @@ int CAimbotMelee::CanHit(Target_t& tTarget, CTFPlayer* pLocal, CTFWeaponBase* pW
 
 
 
-bool CAimbotMelee::Aim(Vec3 vCurAngle, Vec3 vToAngle, Vec3& vOut, int iMethod)
+Vec3 CAimbotMelee::Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod)
 {
-	if (Vec3* pDoubletapAngle = F::Ticks.GetShootAngle())
-	{
-		vOut = *pDoubletapAngle;
-		return true;
-	}
+	Vec3 vReturn = {};
 
 	Math::ClampAngles(vToAngle);
 
@@ -396,21 +389,20 @@ bool CAimbotMelee::Aim(Vec3 vCurAngle, Vec3 vToAngle, Vec3& vOut, int iMethod)
 	case Vars::Aimbot::General::AimTypeEnum::Plain:
 	case Vars::Aimbot::General::AimTypeEnum::Silent:
 	case Vars::Aimbot::General::AimTypeEnum::Locking:
-		vOut = vToAngle;
-		return false;
+		vReturn = vToAngle;
+		break;
 	case Vars::Aimbot::General::AimTypeEnum::Smooth:
-		vOut = vCurAngle.LerpAngle(vToAngle, Vars::Aimbot::General::AssistStrength.Value / 100.f);
-		return true;
+		vReturn = vCurAngle.LerpAngle(vToAngle, Vars::Aimbot::General::AssistStrength.Value / 100.f);
+		break;
 	case Vars::Aimbot::General::AimTypeEnum::Assistive:
 		Vec3 vMouseDelta = G::CurrentUserCmd->viewangles.DeltaAngle(G::LastUserCmd->viewangles);
 		Vec3 vTargetDelta = vToAngle.DeltaAngle(G::LastUserCmd->viewangles);
 		float flMouseDelta = vMouseDelta.Length2D(), flTargetDelta = vTargetDelta.Length2D();
 		vTargetDelta = vTargetDelta.Normalized() * std::min(flMouseDelta, flTargetDelta);
-		vOut = vCurAngle - vMouseDelta + vMouseDelta.LerpAngle(vTargetDelta, Vars::Aimbot::General::AssistStrength.Value / 100.f);
-		return true;
+		vReturn = vCurAngle - vMouseDelta + vMouseDelta.LerpAngle(vTargetDelta, Vars::Aimbot::General::AssistStrength.Value / 100.f);
 	}
 
-	return false;
+	return vReturn;
 }
 
 // assume angle calculated outside with other overload
@@ -508,7 +500,7 @@ void CAimbotMelee::Run(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCmd
 		else
 		{
 			Vec3 vEyePos = pLocal->GetShootPos();
-			Aim(G::CurrentUserCmd->viewangles, Math::CalcAngle(vEyePos, tTarget.m_vPos), tTarget.m_vAngleTo);
+			tTarget.m_vAngleTo = Aim(G::CurrentUserCmd->viewangles, Math::CalcAngle(vEyePos, tTarget.m_vPos));
 		}
 
 		bool bPath = Vars::Visuals::Simulation::SwingLines.Value && Vars::Visuals::Simulation::PlayerPath.Value && Vars::Aimbot::General::AutoShoot.Value && !Vars::Debug::Info.Value;
@@ -574,7 +566,7 @@ bool CAimbotMelee::FindNearestBuildPoint(CBaseObject* pBuilding, CTFPlayer* pLoc
 	bool bFoundPoint = false;
 
 	static auto tf_obj_max_attach_dist = U::ConVars.FindVar("tf_obj_max_attach_dist");
-	float flNearestPoint = tf_obj_max_attach_dist->GetFloat();
+	float flNearestPoint = tf_obj_max_attach_dist ? tf_obj_max_attach_dist->GetFloat() : 160.f;
 	for (int i = 0; i < pBuilding->GetNumBuildPoints(); i++)
 	{
 		int v = GetAttachment(pBuilding, i);
@@ -627,7 +619,7 @@ bool CAimbotMelee::RunSapper(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd
 		vValidTargets.emplace_back(pBuilding, TargetEnum::Unknown, vPoint, vAngleTo, flFOVTo, flDistTo);
 	}
 
-	F::AimbotGlobal.SortTargets(vValidTargets, Vars::Aimbot::General::TargetSelectionEnum::Distance);
+	F::AimbotGlobal.SortTargets(&vValidTargets, Vars::Aimbot::General::TargetSelectionEnum::Distance);
 	for (auto& tTarget : vValidTargets)
 	{
 		static int iLastRun = 0;
@@ -638,7 +630,7 @@ bool CAimbotMelee::RunSapper(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd
 		if (bShouldAim)
 		{
 			G::Attacking = true;
-			Aim(pCmd->viewangles, Math::CalcAngle(vLocalPos, tTarget.m_vPos), tTarget.m_vAngleTo);
+			tTarget.m_vAngleTo = Aim(pCmd->viewangles, Math::CalcAngle(vLocalPos, tTarget.m_vPos));
 			tTarget.m_vAngleTo.x = pCmd->viewangles.x; // we don't need to care about pitch
 			Aim(pCmd, tTarget.m_vAngleTo);
 
@@ -925,7 +917,7 @@ bool CAimbotMelee::AutoEngie(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd
 		if (G::Attacking != 1)
 		{
 			Vec3 vEyePos = pLocal->GetShootPos();
-			Aim(G::CurrentUserCmd->viewangles, Math::CalcAngle(vEyePos, tTarget.m_vPos), tTarget.m_vAngleTo);
+			tTarget.m_vAngleTo = Aim(G::CurrentUserCmd->viewangles, Math::CalcAngle(vEyePos, tTarget.m_vPos));
 		}
 
 		Aim(pCmd, tTarget.m_vAngleTo);

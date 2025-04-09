@@ -43,7 +43,10 @@ void CVisuals::DrawFOV(CTFPlayer* pLocal)
 
 void CVisuals::DrawTicks(CTFPlayer* pLocal)
 {
-	if (!(Vars::Menu::Indicators.Value & Vars::Menu::IndicatorsEnum::Ticks) || !pLocal->IsAlive())
+	if (!(Vars::Menu::Indicators.Value & Vars::Menu::IndicatorsEnum::Ticks))
+		return;
+
+	if (!pLocal->IsAlive())
 		return;
 
 	const DragBox_t dtPos = Vars::Menu::TicksDisplay.Value;
@@ -77,7 +80,7 @@ void CVisuals::DrawTicks(CTFPlayer* pLocal)
 
 void CVisuals::DrawNavBot( CTFPlayer* pLocal )
 {
-	if ( !( Vars::Menu::Indicators.Value & Vars::Menu::IndicatorsEnum::NavBot ) || !pLocal->IsAlive( ) )
+	if ( !( Vars::Menu::Indicators.Value & Vars::Menu::IndicatorsEnum::NavBot ) || !pLocal || !pLocal->IsAlive( ) )
 		return;
 
 	auto bIsReady = F::NavEngine.isReady( );
@@ -196,7 +199,7 @@ void CVisuals::DrawNavBot( CTFPlayer* pLocal )
 
 void CVisuals::DrawPing(CTFPlayer* pLocal)
 {
-	if (!(Vars::Menu::Indicators.Value & Vars::Menu::IndicatorsEnum::Ping) || !pLocal->IsAlive())
+	if (!(Vars::Menu::Indicators.Value & Vars::Menu::IndicatorsEnum::Ping) || !pLocal || !pLocal->IsAlive())
 		return;
 
 	auto pResource = H::Entities.GetPR();
@@ -214,7 +217,7 @@ void CVisuals::DrawPing(CTFPlayer* pLocal)
 
 	float flFake = std::min(flFakeLatency + flFakeLerp, F::Backtrack.m_flMaxUnlag) * 1000.f;
 	float flLatency = std::max(pNetChan->GetLatency(FLOW_INCOMING) + pNetChan->GetLatency(FLOW_OUTGOING) - flFakeLatency, 0.f) * 1000.f;
-	int iLatencyScoreboard = pResource->m_iPing(pLocal->entindex());
+	int iLatencyScoreboard = pResource->GetPing(pLocal->entindex());
 
 	int x = Vars::Menu::PingDisplay.Value.x;
 	int y = Vars::Menu::PingDisplay.Value.y + 8;
@@ -234,9 +237,9 @@ void CVisuals::DrawPing(CTFPlayer* pLocal)
 	}
 
 	if (flFake || Vars::Backtrack::Interp.Value && Vars::Backtrack::Enabled.Value)
-		H::Draw.StringOutlined(fFont, x, y, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Ping {:.0f} (+ {:.0f}) ms", flLatency, flFake).c_str());
+		H::Draw.StringOutlined(fFont, x, y, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Real {:.0f} (+ {:.0f}) ms", flLatency, flFake).c_str());
 	else
-		H::Draw.StringOutlined(fFont, x, y, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Ping {:.0f} ms", flLatency).c_str());
+		H::Draw.StringOutlined(fFont, x, y, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Real {:.0f} ms", flLatency).c_str());
 	H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, "Scoreboard %d ms", iLatencyScoreboard);
 }
 
@@ -1001,7 +1004,10 @@ void CVisuals::FOV(CTFPlayer* pLocal, CViewSetup* pView)
 
 void CVisuals::ThirdPerson(CTFPlayer* pLocal, CViewSetup* pView)
 {
-	if (!pLocal->IsAlive() || F::Spectate.m_iTarget != -1)
+	if (F::Spectate.m_iTarget != -1)
+		return;
+
+	if (!pLocal->IsAlive())
 		return I::Input->CAM_ToFirstPerson();
 
 	const bool bZoom = pLocal->InCond(TF_COND_ZOOMED) && (!Vars::Visuals::Removals::Scope.Value || Vars::Visuals::UI::ZoomFieldOfView.Value < 20);
@@ -1016,7 +1022,8 @@ void CVisuals::ThirdPerson(CTFPlayer* pLocal, CViewSetup* pView)
 	pLocal->ThirdPersonSwitch();
 
 	static auto cam_ideallag = U::ConVars.FindVar("cam_ideallag");
-	cam_ideallag->SetValue(0.f);
+	if (cam_ideallag)
+		cam_ideallag->SetValue(0.f);
 
 	if (I::Input->CAM_IsThirdPerson())
 	{	// thirdperson offset
@@ -1311,6 +1318,16 @@ void CVisuals::CreateMove(CTFPlayer* pLocal, CTFWeaponBase* pWeapon)
 	if (Vars::Visuals::Simulation::ShotPath.Value && G::Attacking == 1 && !F::Aimbot.m_bRan)
 		F::Visuals.ProjectileTrace(pLocal, pWeapon, false);
 
+	{
+		static float flStaticRatio = 0.f;
+		float flOldRatio = flStaticRatio;
+		float flNewRatio = flStaticRatio = Vars::Visuals::UI::AspectRatio.Value;
+
+		static auto r_aspectratio = U::ConVars.FindVar("r_aspectratio");
+		if (flNewRatio != flOldRatio && r_aspectratio)
+			r_aspectratio->SetValue(flNewRatio);
+	}
+
 	if (pLocal && Vars::Visuals::Particles::SpellFootsteps.Value && (F::Ticks.m_bDoubletap || F::Ticks.m_bWarp))
 		S::CTFPlayer_FireEvent.Call<void>(pLocal, pLocal->GetAbsOrigin(), QAngle(), 7001, nullptr);
 	
@@ -1328,12 +1345,4 @@ void CVisuals::CreateMove(CTFPlayer* pLocal, CTFWeaponBase* pWeapon)
 		iOldMedigunBeam = iNewMedigunBeam;
 		iOldMedigunCharge = iNewMedigunCharge;
 	}
-
-	static float flStaticRatio = 0.f;
-	float flOldRatio = flStaticRatio;
-	float flNewRatio = flStaticRatio = Vars::Visuals::UI::AspectRatio.Value;
-
-	static auto r_aspectratio = U::ConVars.FindVar("r_aspectratio");
-	if (flNewRatio != flOldRatio)
-		r_aspectratio->SetValue(flNewRatio);
 }

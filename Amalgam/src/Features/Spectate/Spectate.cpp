@@ -6,13 +6,11 @@ void CSpectate::NetUpdateEnd(CTFPlayer* pLocal)
 		return;
 
 	m_iTarget = m_iIntendedTarget;
-	CTFPlayer* pEntity = nullptr;
-	if (m_iTarget != -1)
-	{
-		pEntity = I::ClientEntityList->GetClientEntity(I::EngineClient->GetPlayerForUserID(m_iTarget))->As<CTFPlayer>();
-		if (pEntity == pLocal)
-			m_iTarget = m_iIntendedTarget = -1;
-	}
+	auto pEntity = m_iTarget != -1
+		? I::ClientEntityList->GetClientEntity(I::EngineClient->GetPlayerForUserID(m_iTarget))->As<CTFPlayer>()
+		: nullptr;
+	if (pEntity == pLocal)
+		m_iTarget = -1;
 
 	if (m_iTarget == -1)
 	{

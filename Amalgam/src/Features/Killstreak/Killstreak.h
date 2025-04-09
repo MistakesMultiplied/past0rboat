@@ -9,7 +9,7 @@ private:
 
 private:
 	int	 GetCurrentStreak();
-	void ApplyKillstreak(int iLocalIdx);
+	void ApplyKillstreak();
 
 public:
 	void PlayerDeath(IGameEvent* pEvent);
