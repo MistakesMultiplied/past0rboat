@@ -617,11 +617,8 @@
     <ClInclude Include="src\SDK\Definitions\Main\IServerEntity.h" />
     <ClInclude Include="src\SDK\Definitions\Main\IServerUnknown.h" />
     <ClInclude Include="src\SDK\Definitions\Misc\IMatchGroupDescription.h" />
-<<<<<<< HEAD
     <ClInclude Include="src\Features\Misc\NamedPipe\NamedPipe.h" />
-=======
     <ClInclude Include="src\SDK\Definitions\Main\PlayerStats.h" />
->>>>>>> upstream/master
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
