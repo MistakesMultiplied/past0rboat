@@ -1091,6 +1091,7 @@
     <ClCompile Include="src\Hooks\CBaseEntity_EstimateAbsVelocity.cpp" />
     <ClCompile Include="src\Hooks\CBasePlayer_ItemPostFrame.cpp" />
     <ClCompile Include="src\Hooks\CBuf_ExecuteCommand.cpp" />
+    <ClCompile Include="src\Hooks\CGameEventManager_FireEventClientSide.cpp" />
     <ClCompile Include="src\Hooks\CHudItemEffectMeter_Weapon_C_TFWeaponBase_IsEnabled.cpp" />
     <ClCompile Include="src\Hooks\CParticleProperty_Create.cpp" />
     <ClCompile Include="src\Hooks\CSniperDot_GetRenderingPositions.cpp" />
@@ -1119,6 +1120,7 @@
     <ClCompile Include="src\Hooks\CPlayerResource_GetPlayerName.cpp" />
     <ClCompile Include="src\Hooks\CTFGCClientSystem_UpdateAssignedLobby.cpp" />
     <ClCompile Include="src\Hooks\CTFHudDeathNotice_AddAdditionalMsg.cpp" />
+    <ClCompile Include="src\Hooks\CTFScatterGun_FireBullet.cpp" />
     <ClCompile Include="src\Hooks\CThirdPersonManager_Update.cpp" />
     <ClCompile Include="src\Hooks\CViewRender_PerformScreenOverlay.cpp" />
     <ClCompile Include="src\Hooks\FuckReportShit.cpp" />
@@ -1434,6 +1436,7 @@
     <ClInclude Include="src\SDK\Definitions\Main\IServerEntity.h" />
     <ClInclude Include="src\SDK\Definitions\Main\IServerUnknown.h" />
     <ClInclude Include="src\SDK\Definitions\Main\MD5.h" />
+    <ClInclude Include="src\SDK\Definitions\Main\PlayerStats.h" />
     <ClInclude Include="src\SDK\Definitions\Misc\bitvec.h" />
     <ClInclude Include="src\SDK\Definitions\Misc\BSPFlags.h" />
     <ClInclude Include="src\SDK\Definitions\Interfaces\IMoveHelper.h" />

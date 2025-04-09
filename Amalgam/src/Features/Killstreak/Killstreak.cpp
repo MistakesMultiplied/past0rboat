@@ -1,65 +1,63 @@
 #include "Killstreak.h"
 
-// It only works on the hud kisstreak count for some reason
-// Might be related to custom kill message stuff (?)
-
 int CKillstreak::GetCurrentStreak()
 {
 	return m_iCurrentKillstreak;
 }
 
-void CKillstreak::ApplyKillstreak()
+void CKillstreak::ApplyKillstreak(int iLocalIdx)
 {
 	if (const auto& pLocal = H::Entities.GetLocal())
 	{
 		if (const auto& pPR = H::Entities.GetPR())
 		{
-			const auto streaksResource = pPR->GetStreaks(I::EngineClient->GetLocalPlayer());
-			if (streaksResource && *streaksResource != GetCurrentStreak())
-			{
-				streaksResource[kTFStreak_Kills] = GetCurrentStreak();
-				streaksResource[kTFStreak_KillsAll] = GetCurrentStreak();
-				//streaksResource[kTFStreak_Ducks] = GetCurrentStreak();
-				//streaksResource[kTFStreak_Duck_levelup] = GetCurrentStreak();
-			}
+			int iCurrentStreak = GetCurrentStreak();
+			pPR->SetStreak(iLocalIdx, kTFStreak_Kills, iCurrentStreak);
+			pPR->SetStreak(iLocalIdx, kTFStreak_KillsAll, iCurrentStreak);
+			pPR->SetStreak(iLocalIdx, kTFStreak_Ducks, iCurrentStreak);
+			pPR->SetStreak(iLocalIdx, kTFStreak_Duck_levelup, iCurrentStreak);
 
-			pLocal->m_nStreaks(kTFStreak_Kills) = GetCurrentStreak();
-			pLocal->m_nStreaks(kTFStreak_KillsAll) = GetCurrentStreak();
-			//pLocal->m_nStreaks(kTFStreak_Ducks) = GetCurrentStreak();
-			//pLocal->m_nStreaks(kTFStreak_Duck_levelup) = GetCurrentStreak();
+			pLocal->m_nStreaks(kTFStreak_Kills) = iCurrentStreak;
+			pLocal->m_nStreaks(kTFStreak_KillsAll) = iCurrentStreak;
+			pLocal->m_nStreaks(kTFStreak_Ducks) = iCurrentStreak;
+			pLocal->m_nStreaks(kTFStreak_Duck_levelup) = iCurrentStreak;
 		}
 	}
 }
 
 void CKillstreak::PlayerDeath(IGameEvent* pEvent)
 {
-	if (!Vars::Visuals::Misc::KillstreakWeapons.Value)
-		return;
-
 	const int attacker = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
 	const int userid = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
 
-	if (userid == I::EngineClient->GetLocalPlayer())
+	int iLocalPlayerIdx = I::EngineClient->GetLocalPlayer();
+	if (userid == iLocalPlayerIdx)
 	{
 		Reset();
 		return;
 	}
 
 	auto pLocal = H::Entities.GetLocal();
-	if (attacker != I::EngineClient->GetLocalPlayer() ||
+	if (attacker != iLocalPlayerIdx ||
 		attacker == userid ||
-		!pLocal || !pLocal->IsAlive())
+		!pLocal)
 		return;
 
-	const auto wepID = pEvent->GetInt("weaponid");
+	if (!pLocal->IsAlive())
+	{
+		if (m_iCurrentKillstreak)
+			Reset();
+		return;
+	}
+	const auto iWeaponID = pEvent->GetInt("weaponid");
 
 	m_iCurrentKillstreak++;
-	m_mKillstreakMap[wepID]++;
+	m_mKillstreakMap[iWeaponID]++;
 
 	pEvent->SetInt("kill_streak_total", GetCurrentStreak());
-	pEvent->SetInt("kill_streak_wep", m_mKillstreakMap[wepID]);
+	pEvent->SetInt("kill_streak_wep", m_mKillstreakMap[iWeaponID]);
 
-	ApplyKillstreak();
+	ApplyKillstreak(iLocalPlayerIdx);
 }
 
 void CKillstreak::PlayerSpawn(IGameEvent* pEvent)
@@ -68,11 +66,11 @@ void CKillstreak::PlayerSpawn(IGameEvent* pEvent)
 		return;
 
 	const int userid = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
-
-	if (userid == I::EngineClient->GetLocalPlayer())
+	int iLocalPlayerIdx = I::EngineClient->GetLocalPlayer();
+	if (userid == iLocalPlayerIdx)
 		Reset();
 
-	ApplyKillstreak();
+	ApplyKillstreak(iLocalPlayerIdx);
 }
 
 void CKillstreak::Reset()

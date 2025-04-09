@@ -643,8 +643,8 @@ void CNavBot::UpdateEnemyBlacklist(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, in
 	static Timer tDormantUpdateTimer{};
 	static int iLastSlotBlacklist = primary;
 
-	bool bShouldRunNormal = tBlacklistUpdateTimer.Run(0.5f) || iLastSlotBlacklist != iSlot;
-	bool bShouldRunDormant = Vars::Misc::Movement::NavBot::Blacklist.Value & Vars::Misc::Movement::NavBot::BlacklistEnum::DormantThreats && (tDormantUpdateTimer.Run(1.f) || iLastSlotBlacklist != iSlot);
+	bool bShouldRunNormal = tBlacklistUpdateTimer.Run(Vars::Misc::Movement::NavBot::BlacklistDelay.Value) || iLastSlotBlacklist != iSlot;
+	bool bShouldRunDormant = Vars::Misc::Movement::NavBot::Blacklist.Value & Vars::Misc::Movement::NavBot::BlacklistEnum::DormantThreats && (tDormantUpdateTimer.Run(Vars::Misc::Movement::NavBot::BlacklistDormantDelay.Value) || iLastSlotBlacklist != iSlot);
 	// Don't run since we do not care here
 	if (!bShouldRunNormal && !bShouldRunDormant)
 		return;
@@ -856,7 +856,7 @@ bool CNavBot::StayNearTarget(int iEntIndex)
 	{
 		m_iStayNearTargetIdx = pEntity->entindex();
 		if (auto pPlayerResource = H::Entities.GetPR())
-			m_sFollowTargetName = SDK::ConvertUtf8ToWide(pPlayerResource->GetPlayerName(pEntity->entindex()));
+			m_sFollowTargetName = SDK::ConvertUtf8ToWide(pPlayerResource->m_pszPlayerName(pEntity->entindex()));
 		return true;
 	}
 

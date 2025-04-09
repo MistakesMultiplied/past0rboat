@@ -34,7 +34,7 @@ void CCPController::UpdateControlPoints()
 		tData.m_iIdx = i;
 
 		// Update position
-		tData.m_vPos = m_pObjectiveResource->CPPositions(i);
+		tData.m_vPos = m_pObjectiveResource->m_vCPPositions(i);
 	}
 
 	if (tCapStatusUpdate.Run(1.f))
@@ -55,17 +55,17 @@ void CCPController::UpdateControlPoints()
 
 bool CCPController::TeamCanCapPoint(int iIndex, int iTeam)
 {
-	return m_pObjectiveResource->TeamCanCap(iIndex + iTeam * MAX_CONTROL_POINTS);
+	return m_pObjectiveResource->m_bTeamCanCap(iIndex + iTeam * MAX_CONTROL_POINTS);
 }
 
 int CCPController::GetPreviousPointForPoint(int iIndex, int iTeam, int iPrevIdx)
 {
-	return m_pObjectiveResource->PreviousPoints(iPrevIdx + (iIndex * MAX_PREVIOUS_POINTS) + (iTeam * MAX_CONTROL_POINTS * MAX_PREVIOUS_POINTS));
+	return m_pObjectiveResource->m_iPreviousPoints(iPrevIdx + (iIndex * MAX_PREVIOUS_POINTS) + (iTeam * MAX_CONTROL_POINTS * MAX_PREVIOUS_POINTS));
 }
 
 int CCPController::GetFarthestOwnedControlPoint(int iTeam)
 {
-	int iOwnedEnd = m_pObjectiveResource->BaseControlPoints(iTeam);
+	int iOwnedEnd = m_pObjectiveResource->m_iBaseControlPoints(iTeam);
 	if (iOwnedEnd == -1)
 		return -1;
 
@@ -83,7 +83,7 @@ int CCPController::GetFarthestOwnedControlPoint(int iTeam)
 	for (int iPoint = iOwnedEnd; iPoint != iEnemyEnd; iPoint += iWalk)
 	{
 		// If we've hit a point we don't own, we're done
-		if (m_pObjectiveResource->OwningTeam(iPoint) != iTeam)
+		if (m_pObjectiveResource->m_iOwner(iPoint) != iTeam)
 			break;
 
 		iFarthestPoint = iPoint;
@@ -95,7 +95,7 @@ int CCPController::GetFarthestOwnedControlPoint(int iTeam)
 bool CCPController::IsPointUseable(int iIndex, int iTeam)
 {
 	// We Own it, can't cap it
-	if (m_pObjectiveResource->OwningTeam(iIndex) == iTeam)
+	if (m_pObjectiveResource->m_iOwner(iIndex) == iTeam)
 		return false;
 
 	// Can we cap the point?
@@ -103,16 +103,16 @@ bool CCPController::IsPointUseable(int iIndex, int iTeam)
 		return false;
 
 	// We are playing a sectioned map, check if the CP is in it
-	if (m_pObjectiveResource->m_bPlayingMiniRounds() && !m_pObjectiveResource->InMiniRound(iIndex))
+	if (m_pObjectiveResource->m_bPlayingMiniRounds() && !m_pObjectiveResource->m_bInMiniRound(iIndex))
 		return false;
 
 	// Is the point locked?
-	if (m_pObjectiveResource->CPLocked(iIndex))
+	if (m_pObjectiveResource->m_bCPLocked(iIndex))
 		return false;
 
 	// Linear cap means that it won't require previous points, bail
 	static auto tf_caplinear = U::ConVars.FindVar("tf_caplinear");
-	if (!tf_caplinear || tf_caplinear->GetBool())
+	if (tf_caplinear->GetBool())
 		return true;
 
 	// Any previous points necessary?
@@ -145,7 +145,7 @@ bool CCPController::IsPointUseable(int iIndex, int iTeam)
 		if (iPointNeeded != -1)
 		{
 			// We don't own the needed points
-			if (m_pObjectiveResource->OwningTeam(iPointNeeded) != iTeam)
+			if (m_pObjectiveResource->m_iOwner(iPointNeeded) != iTeam)
 				return false;
 		}
 	}

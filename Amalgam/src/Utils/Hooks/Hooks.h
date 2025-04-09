@@ -31,18 +31,21 @@ public:
 	}
 };
 
-#define MAKE_HOOK(name, address, type, ...) namespace Hooks \
-{\
-	namespace name\
-	{\
+#define MAKE_HOOK(name, address, type, ...) \
+namespace Hooks \
+{ \
+	namespace name \
+	{ \
 		bool Init(); \
 		inline CHook Hook(#name, Init); \
 		using FN = type(__fastcall*)(__VA_ARGS__); \
 		type __fastcall Func(__VA_ARGS__); \
-	}\
+	} \
 } \
 bool Hooks::name::Init() { if (address) {Hook.Create(reinterpret_cast<void*>(address), Func); return true;} else { SDK::Output("Amalgam", std::format("Failed to initialize hook: {}", #name).c_str(), { 255, 150, 175, 255 }, true, true); return false;}} \
 type __fastcall Hooks::name::Func(__VA_ARGS__)
+
+#define CALL_ORIGINAL Hook.As<FN>()
 
 class CHooks
 {
@@ -58,5 +61,3 @@ public:
 };
 
 ADD_FEATURE_CUSTOM(CHooks, Hooks, U);
-
-#define CALL_ORIGINAL Hook.As<FN>()

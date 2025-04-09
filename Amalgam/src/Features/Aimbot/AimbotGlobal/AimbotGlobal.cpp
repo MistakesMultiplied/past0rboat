@@ -4,9 +4,9 @@
 #include "../../Misc/NamedPipe/NamedPipe.h"
 #include "../../TickHandler/TickHandler.h"
 
-void CAimbotGlobal::SortTargets(std::vector<Target_t>* targets, int iMethod)
+void CAimbotGlobal::SortTargets(std::vector<Target_t>& vTargets, int iMethod)
 {	// Sort by preference
-	std::sort(targets->begin(), targets->end(), [&](const Target_t& a, const Target_t& b) -> bool
+	std::sort(vTargets.begin(), vTargets.end(), [&](const Target_t& a, const Target_t& b) -> bool
 		{
 			switch (iMethod)
 			{
@@ -17,9 +17,9 @@ void CAimbotGlobal::SortTargets(std::vector<Target_t>* targets, int iMethod)
 		});
 }
 
-void CAimbotGlobal::SortPriority(std::vector<Target_t>* targets)
+void CAimbotGlobal::SortPriority(std::vector<Target_t>& vTargets)
 {	// Sort by priority
-	std::sort(targets->begin(), targets->end(), [&](const Target_t& a, const Target_t& b) -> bool
+	std::sort(vTargets.begin(), vTargets.end(), [&](const Target_t& a, const Target_t& b) -> bool
 		{
 			return a.m_nPriority > b.m_nPriority;
 		});

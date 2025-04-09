@@ -341,7 +341,7 @@ bool CAutoDetonate::StickyCheck(CTFPlayer* pLocal, CUserCmd* pCmd)
 		if (!pWeapon)
 			continue;
 
-		float flLiveTime{ SDK::AttribHookValue(tf_grenadelauncher_livetime ? tf_grenadelauncher_livetime->GetFloat() : 0.8f, "sticky_arm_time", pWeapon) * flLiveTimeMod };
+		float flLiveTime{ SDK::AttribHookValue(tf_grenadelauncher_livetime->GetFloat(), "sticky_arm_time", pWeapon) * flLiveTimeMod };
 		if (!pPipebomb->m_flCreationTime() || I::GlobalVars->curtime < pPipebomb->m_flCreationTime() + flLiveTime)
 			continue;
 
