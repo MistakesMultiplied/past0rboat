@@ -826,7 +826,7 @@ namespace Vars
 				CVar(RechargeDTDelay, 5)
 				CVarEnum(AutoScope, 0, NONE, Off, Simple, MoveSim)
 				CVar(AutoScopeCancelTime, 3)
-				CVarEnum(Preferences, 0b0, NONE, SearchHealth = 1 << 0, SearchAmmo = 1 << 1, ReloadWeapons = 1 << 2, StalkEnemies = 1 << 3, DefendObjectives = 1 << 4, CaptureObjectives = 1 << 5, HelpCaptureObjectives = 1 << 6, EscapeDanger = 1 << 7, SafeCapping = 1 << 8, TargetSentries = 1 << 9, AutoEngie = 1 << 10, TargetSentriesLowRange = 1 << 11, HelpFriendlyCaptureObjectives = 1 << 12, DontEscapeDangerIntel = 1 << 13)
+				CVarEnum(Preferences, 0b0, NONE, SearchHealth = 1 << 0, SearchAmmo = 1 << 1, ReloadWeapons = 1 << 2, StalkEnemies = 1 << 3, DefendObjectives = 1 << 4, CaptureObjectives = 1 << 5, HelpCaptureObjectives = 1 << 6, EscapeDanger = 1 << 7, SafeCapping = 1 << 8, TargetSentries = 1 << 9, AutoEngie = 1 << 10, TargetSentriesLowRange = 1 << 11, HelpFriendlyCaptureObjectives = 1 << 12, DontEscapeDangerIntel = 1 << 13, GroupWithOthers = 1 << 14)
 				CVarEnum(WeaponSlot, 0, NONE, Off, Best, Primary, Secondary, PDA, PDA2, Melee)
 
 				CVar(StickyDangerRange, 600, NOSAVE) // debug
@@ -861,6 +861,8 @@ namespace Vars
 			CVarEnum(ForceClass, 0, NONE, Off, Scout, Sniper, Soldier, Demoman, Medic, Heavy, Pyro, Spy, Engineer)
 			CVarEnum(VoiceCommandSpam, 0, NONE, Off, Random, Medic, Thanks, NiceShot, Cheers, Jeers, GoGoGo, MoveUp, GoLeft, GoRight, Yes, No, Incoming, Spy, Sentry, NeedTeleporter, Pootis, NeedSentry, ActivateCharge, Help, BattleCry)
 			CVar(NoiseSpam, false)
+			CVar(AutoTaunt, false)
+			CVar(AutoTauntChance, 100)
 		SUBNAMESPACE_END(Automation)
 
 		SUBNAMESPACE_BEGIN(Sound)

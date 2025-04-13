@@ -535,6 +535,9 @@ void CMisc::Event(IGameEvent* pEvent, uint32_t uHash)
 			I::EngineClient->ClientCmd_Unrestricted(std::format("next_map_vote {}", Vars::Misc::MannVsMachine::AutoVoteMapOption.Value).c_str());
 		}
 		break;
+	case FNV1A::Hash32Const("player_death"):
+		AutoTaunt(pEvent);
+		break;
 	}
 }
 
@@ -931,5 +934,24 @@ void CMisc::Chatspam(CTFPlayer* pLocal)
 		std::string chatCommand = Vars::Misc::Chatspam::TeamOnly.Value ? "say_team \"" : "say \"";
 		chatCommand += message + "\"";
 		I::EngineClient->ClientCmd_Unrestricted(chatCommand.c_str());
+	}
+}
+
+void CMisc::AutoTaunt(IGameEvent* pEvent)
+{
+	if (!Vars::Misc::Automation::AutoTaunt.Value || !pEvent || !I::EngineClient)
+		return;
+
+	const int attacker = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
+	const int victim = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+
+	if (attacker != I::EngineClient->GetLocalPlayer() || victim == attacker)
+		return;
+
+	int randomChance = SDK::RandomInt(0, 100);
+	
+	if (randomChance <= Vars::Misc::Automation::AutoTauntChance.Value)
+	{
+		I::EngineClient->ClientCmd_Unrestricted("taunt");
 	}
 }

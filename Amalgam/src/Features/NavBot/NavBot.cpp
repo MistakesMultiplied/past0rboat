@@ -1813,6 +1813,44 @@ std::optional<Vector> CNavBot::GetDoomsdayGoal(CTFPlayer* pLocal, int iOurTeam, 
 					m_bOverwriteCapture = true;
 					return std::nullopt;
 				}
+
+				// Check for enemies near the capture point that might intercept
+				bool bEnemiesNearRocket = false;
+				constexpr float flThreatRadius = 500.0f; // Distance to check for enemies
+				
+				for (auto pEntity : H::Entities.GetGroup(EGroupType::PLAYERS_ENEMIES))
+				{
+					if (pEntity->IsDormant())
+						continue;
+
+					auto pEnemy = pEntity->As<CTFPlayer>();
+					if (!pEnemy->IsAlive())
+						continue;
+
+					if (pEnemy->GetAbsOrigin().DistToSqr(*vRocket) <= pow(flThreatRadius, 2))
+					{
+						bEnemiesNearRocket = true;
+						break;
+					}
+				}
+
+				// If enemies are near the rocket, stay back a bit until teammates can help
+				if (bEnemiesNearRocket && (Vars::Misc::Movement::NavBot::Preferences.Value & Vars::Misc::Movement::NavBot::PreferencesEnum::DefendObjectives))
+				{
+					// Find a safer approach path or wait for teammates
+					auto vPathToRocket = *vRocket - pLocal->GetAbsOrigin();
+					float pathLen = vPathToRocket.Length();
+					if (pathLen > 0.001f) {
+						vPathToRocket.x /= pathLen;
+						vPathToRocket.y /= pathLen;
+						vPathToRocket.z /= pathLen;
+					}
+					
+					// Back up a bit from the rocket
+					Vector vSaferPosition = *vRocket - vPathToRocket.Scale(300.0f);
+					return vSaferPosition;
+				}
+
 				return vRocket;
 			}
 		}
@@ -1821,13 +1859,84 @@ std::optional<Vector> CNavBot::GetDoomsdayGoal(CTFPlayer* pLocal, int iOurTeam, 
 		{
 			if (ShouldAssist(pLocal, iCarrierIdx))
 			{
-				// Stay slightly behind and to the side to avoid blocking
-				if (vPosition)
+				// Check if carrier is navigating to the rocket
+				auto pCarrier = I::ClientEntityList->GetClientEntity(iCarrierIdx);
+				if (pCarrier && !pCarrier->IsDormant())
 				{
-					Vector vOffset(40.0f, 40.0f, 0.0f);
-					*vPosition -= vOffset;
+					// Stay slightly behind and to the side to avoid blocking
+					if (vPosition)
+					{
+						// Try to position strategically to protect the carrier
+						auto vRocket = F::CPController.GetClosestControlPoint(pCarrier->GetAbsOrigin(), iOurTeam);
+						if (vRocket)
+						{
+							Vector vCarrierToRocket = *vRocket - pCarrier->GetAbsOrigin();
+							float len = vCarrierToRocket.Length();
+							if (len > 0.001f) {
+								vCarrierToRocket.x /= len;
+								vCarrierToRocket.y /= len;
+								vCarrierToRocket.z /= len;
+							}
+							
+							// Position to the side and slightly behind the carrier in the direction of the rocket
+							Vector vCrossProduct = vCarrierToRocket.Cross(Vector(0, 0, 1));
+							float crossLen = vCrossProduct.Length();
+							if (crossLen > 0.001f) {
+								vCrossProduct.x /= crossLen;
+								vCrossProduct.y /= crossLen;
+								vCrossProduct.z /= crossLen;
+							}
+							
+							// Position offset from carrier toward rocket but slightly to the side
+							Vector vOffset = vCarrierToRocket.Scale(-80.0f) + vCrossProduct.Scale(60.0f);
+							return pCarrier->GetAbsOrigin() + vOffset;
+						}
+						
+						// Default offset if rocket position not found
+						Vector vOffset(40.0f, 40.0f, 0.0f);
+						*vPosition -= vOffset;
+					}
+					return vPosition;
 				}
-				return vPosition;
+			}
+		}
+	}
+
+	// If nobody has the australium, look for it
+	if (vPosition)
+	{
+		// Check if enemies are near the australium
+		bool bEnemiesNearAustralium = false;
+		constexpr float flThreatRadius = 600.0f;
+		
+		for (auto pEntity : H::Entities.GetGroup(EGroupType::PLAYERS_ENEMIES))
+		{
+			if (pEntity->IsDormant())
+				continue;
+
+			auto pEnemy = pEntity->As<CTFPlayer>();
+			if (!pEnemy->IsAlive())
+				continue;
+
+			if (pEnemy->GetAbsOrigin().DistToSqr(*vPosition) <= pow(flThreatRadius, 2))
+			{
+				bEnemiesNearAustralium = true;
+				break;
+			}
+		}
+		
+		// If enemies are near and we're not close, approach carefully
+		if (bEnemiesNearAustralium && pLocal->GetAbsOrigin().DistToSqr(*vPosition) > pow(300.0f, 2))
+		{
+			// Try to find a safer approach path
+			auto pClosestNav = F::NavEngine.findClosestNavSquare(*vPosition);
+			if (pClosestNav)
+			{
+				std::optional<Vector> vVischeckPoint = *vPosition;
+				if (auto vHidingSpot = FindClosestHidingSpot(pClosestNav, vVischeckPoint, 5))
+				{
+					return (*vHidingSpot).first->m_center;
+				}
 			}
 		}
 	}
@@ -1883,7 +1992,9 @@ bool CNavBot::CaptureObjectives(CTFPlayer* pLocal, CTFWeaponBase* pWeapon)
 		break;
 	default:
 		if (F::GameObjectiveController.m_bDoomsday)
+		{
 			vTarget = GetDoomsdayGoal(pLocal, iOurTeam, iEnemyTeam);
+		}
 		break;
 	}
 
@@ -2701,6 +2812,7 @@ void CNavBot::Run(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCmd)
 
 	AutoScope(pLocal, pWeapon, pCmd);
 
+	UpdateLocalBotPositions(pLocal);
 	//Recharge doubletap every n seconds
 	if (Vars::Misc::Movement::NavBot::RechargeDT.Value && IsWeaponValidForDT(pWeapon))
 	{
@@ -2756,7 +2868,6 @@ void CNavBot::Run(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCmd)
 	// Add engie logic and target sentries logic. (Done)
 	// Also maybe add some spy sapper logic? (No.)
 	// Fix defend and help capture logic
-	// Fix capture logic (control points, sd_doomsday)
 	// Fix reload stuff because its really janky
 	// Finish auto wewapon stuff
 	// Make a better closest enemy lorgic
@@ -2769,6 +2880,7 @@ void CNavBot::Run(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCmd)
 		|| GetAmmo(pCmd, pLocal)
 		//|| RunReload( pLocal, pWeapon )
 		|| RunSafeReload(pLocal, pWeapon)
+		|| MoveInFormation(pLocal, pWeapon)
 		|| CaptureObjectives(pLocal, pWeapon)
 		|| EngineerLogic(pCmd, pLocal, tClosestEnemy)
 		|| SnipeSentries(pLocal)
@@ -2809,4 +2921,227 @@ void CNavBot::Reset( )
 	m_iMyDispenserIdx = -1;
 	m_vSniperSpots.clear( );
 	m_mAutoScopeCache.clear();
+}
+
+void CNavBot::UpdateLocalBotPositions(CTFPlayer* pLocal)
+{
+	if (!m_tUpdateFormationTimer.Run(0.5f))
+		return;
+
+	m_vLocalBotPositions.clear();
+	if (!I::EngineClient->IsInGame())
+		return;
+
+	// Get our own info first
+	PlayerInfo_t localInfo{};
+	if (!I::EngineClient->GetPlayerInfo(I::EngineClient->GetLocalPlayer(), &localInfo))
+		return;
+
+	uint32_t localFriendsID = localInfo.friendsID;
+
+	// Thenn heck each player
+	for (int i = 1; i <= I::EngineClient->GetMaxClients(); i++)
+	{
+		if (i == I::EngineClient->GetLocalPlayer())
+			continue;
+
+		PlayerInfo_t pi{};
+		if (!I::EngineClient->GetPlayerInfo(i, &pi))
+			continue;
+
+		// Is this a local bot????
+		if (!F::NamedPipe::IsLocalBot(pi.friendsID))
+			continue;
+
+		// Get the player entity
+		auto pEntity = I::ClientEntityList->GetClientEntity(i);
+		if (!pEntity || !pEntity->IsPlayer())
+			continue;
+
+		auto pPlayer = pEntity->As<CTFPlayer>();
+		if (!pPlayer->IsAlive() || pPlayer->IsDormant())
+			continue;
+
+		// Add to our list
+		m_vLocalBotPositions.push_back({ pi.friendsID, pPlayer->GetAbsOrigin() });
+	}
+
+	// Sort by friendsID to ensure consistent ordering across all bots
+	std::sort(m_vLocalBotPositions.begin(), m_vLocalBotPositions.end(), 
+		[](const std::pair<uint32_t, Vector>& a, const std::pair<uint32_t, Vector>& b) {
+			return a.first < b.first;
+		});
+
+	// Determine our position in the formatin
+	m_iPositionInFormation = -1;
+	
+	// Add ourselves to the list for calculation purposes
+	std::vector<uint32_t> allBotsInOrder;
+	allBotsInOrder.push_back(localFriendsID);
+	
+	for (const auto& bot : m_vLocalBotPositions)
+		allBotsInOrder.push_back(bot.first);
+	
+	// Sort all bots (including us)
+	std::sort(allBotsInOrder.begin(), allBotsInOrder.end());
+	
+	// Find our pofition
+	for (size_t i = 0; i < allBotsInOrder.size(); i++)
+	{
+		if (allBotsInOrder[i] == localFriendsID)
+		{
+			m_iPositionInFormation = static_cast<int>(i);
+			break;
+		}
+	}
+}
+
+std::optional<Vector> CNavBot::GetFormationOffset(CTFPlayer* pLocal, int positionIndex)
+{
+	if (positionIndex <= 0)
+		return std::nullopt; // Leader has no offset
+	
+	// Calculate our desired position relative to the leader
+	Vector vOffset(0, 0, 0);
+	
+	// Calculate the movement direction of the leader
+	Vector vLeaderOrigin(0, 0, 0);
+	Vector vLeaderVelocity(0, 0, 0);
+	
+	if (!m_vLocalBotPositions.empty())
+	{
+		auto pLeader = I::ClientEntityList->GetClientEntity(1); // Leader is always at index 1
+		for (int i = 1; i <= I::EngineClient->GetMaxClients(); i++)
+		{
+			PlayerInfo_t pi{};
+			if (!I::EngineClient->GetPlayerInfo(i, &pi))
+				continue;
+				
+			if (pi.friendsID == m_vLocalBotPositions[0].first)
+			{
+				pLeader = I::ClientEntityList->GetClientEntity(i);
+				break;
+			}
+		}
+		
+		if (pLeader && pLeader->IsPlayer())
+		{
+			auto pLeaderPlayer = pLeader->As<CTFPlayer>();
+			vLeaderOrigin = pLeaderPlayer->GetAbsOrigin();
+			vLeaderVelocity = pLeaderPlayer->m_vecVelocity();
+		}
+		else
+		{
+			vLeaderOrigin = m_vLocalBotPositions[0].second;
+			vLeaderVelocity = Vector(0, 0, 0);
+		}
+	}
+	else
+	{
+		// No leader found, use our own direction
+		vLeaderOrigin = pLocal->GetAbsOrigin();
+		vLeaderVelocity = pLocal->m_vecVelocity();
+	}
+	
+	// Normalize leader velocity for direction
+	Vector vDirection = vLeaderVelocity;
+	if (vDirection.Length() < 10.0f) // If leader is barely moving, use view direction
+	{
+		QAngle viewAngles;
+		I::EngineClient->GetViewAngles(viewAngles);
+		Math::AngleVectors(viewAngles, &vDirection);
+	}
+	
+	vDirection.z = 0; // Ignore vertical component
+	float length = vDirection.Length();
+	if (length > 0.001f) {
+		vDirection.x /= length;
+		vDirection.y /= length;
+		vDirection.z /= length;
+	}
+	
+	// Calculate cross product for perpendicular direction (for side-by-side formations)
+	Vector vRight = vDirection.Cross(Vector(0, 0, 1));
+	// Normalize right vector
+	length = vRight.Length();
+	if (length > 0.001f) {
+		vRight.x /= length;
+		vRight.y /= length;
+		vRight.z /= length;
+	}
+	
+	// Different formation styles:
+	// 1. Line formation (bots following one after another)
+	vOffset = vDirection.Scale(-m_flFormationDistance * positionIndex);
+	
+	return vOffset;
+}
+
+bool CNavBot::MoveInFormation(CTFPlayer* pLocal, CTFWeaponBase* pWeapon)
+{
+	if (!(Vars::Misc::Movement::NavBot::Preferences.Value & Vars::Misc::Movement::NavBot::PreferencesEnum::GroupWithOthers))
+		return false;
+		
+	// UpdateLocalBotPositions is called from Run(), so we don't need to call it here
+	// If we haven't found a position in formation, we can't move in formation
+	if (m_iPositionInFormation < 0 || m_vLocalBotPositions.empty())
+		return false;
+	
+	// If we're the leader, don't move in formation
+	if (m_iPositionInFormation == 0)
+		return false;
+	
+	// Get our offset in the formation
+	auto vOffsetOpt = GetFormationOffset(pLocal, m_iPositionInFormation);
+	if (!vOffsetOpt)
+		return false;
+	
+	// Find the leader
+	uint32_t leaderID = 0;
+	Vector vLeaderPos;
+	
+	if (!m_vLocalBotPositions.empty())
+	{
+		// Find the actual leader in-game
+		for (int i = 1; i <= I::EngineClient->GetMaxClients(); i++)
+		{
+			PlayerInfo_t pi{};
+			if (!I::EngineClient->GetPlayerInfo(i, &pi))
+				continue;
+				
+			if (pi.friendsID == m_vLocalBotPositions[0].first)
+			{
+				auto pLeader = I::ClientEntityList->GetClientEntity(i);
+				if (pLeader && pLeader->IsPlayer())
+				{
+					auto pLeaderPlayer = pLeader->As<CTFPlayer>();
+					leaderID = pi.friendsID;
+					vLeaderPos = pLeaderPlayer->GetAbsOrigin();
+					break;
+				}
+			}
+		}
+	}
+	
+	// If we couldn't find the leader, we can't move in formation
+	if (leaderID == 0)
+		return false;
+	
+	// Calculate our target position
+	Vector vTargetPos = vLeaderPos + *vOffsetOpt;
+	
+	// If we're already close enough to our position, don't bother moving
+	float distToTarget = pLocal->GetAbsOrigin().DistToSqr(vTargetPos);
+	if (distToTarget <= pow(30.0f, 2))
+		return true;
+	
+	// Only try to move to the position if we're not already pathing to something important
+	if (F::NavEngine.current_priority > patrol)
+		return false;
+	
+	// Try to navigate to our position in formation
+	if (F::NavEngine.navTo(vTargetPos, patrol, true, !F::NavEngine.isPathing()))
+		return true;
+	
+	return false;
 }

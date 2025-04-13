@@ -15,6 +15,7 @@ class CMisc
 	void NoiseSpam(CTFPlayer* pLocal);
 	void VoiceCommandSpam(CTFPlayer* pLocal);
 	void Chatspam(CTFPlayer* pLocal);
+	void AutoTaunt(IGameEvent* pEvent);
 
 	void CheatsBypass();
 	void PingReducer();

@@ -59,6 +59,11 @@ private:
 	int m_iCurrentSlot = primary;
 	slots m_eLastReloadSlot = slots();
 
+	std::vector<std::pair<uint32_t, Vector>> m_vLocalBotPositions;
+	int m_iPositionInFormation = -1;
+	float m_flFormationDistance = 120.0f; 
+	Timer m_tUpdateFormationTimer;
+
 	// Overwrite to return true for payload carts as an example
 	bool m_bOverwriteCapture = false;
 private:
@@ -115,6 +120,10 @@ private:
 	bool CaptureObjectives(CTFPlayer* pLocal, CTFWeaponBase* pWeapon);
 	bool Roam(CTFPlayer* pLocal, CTFWeaponBase* pWeapon);
 	bool MeleeAttack(CUserCmd* pCmd, CTFPlayer* pLocal, int iSlot, ClosestEnemy_t tClosestEnemy);
+
+	void UpdateLocalBotPositions(CTFPlayer* pLocal);
+	bool MoveInFormation(CTFPlayer* pLocal, CTFWeaponBase* pWeapon);
+	std::optional<Vector> GetFormationOffset(CTFPlayer* pLocal, int positionIndex);
 
 	// Run away from dangerous areas
 	bool EscapeDanger(CTFPlayer* pLocal);

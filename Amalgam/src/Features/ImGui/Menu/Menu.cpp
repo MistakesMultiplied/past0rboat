@@ -1280,6 +1280,8 @@ void CMenu::MenuMisc(int iTab)
 				FToggle("Auto F1 priority", Vars::Misc::Automation::AutoF1Priority, FToggle_Right);
 				FDropdown("Voice command spam", Vars::Misc::Automation::VoiceCommandSpam, { "Off", "Random", "Medic", "Thanks", "Nice Shot", "Cheers", "Jeers", "Go Go Go", "Move Up", "Go Left", "Go Right", "Yes", "No", "Incoming", "Spy", "Sentry Ahead", "Need Teleporter", "Pootis", "Need Sentry", "Activate Charge", "Help", "Battle Cry" }, {}, FDropdown_Left);
 				FToggle("Noise spam", Vars::Misc::Automation::NoiseSpam, FToggle_Right);
+				FToggle("Auto taunt after kill", Vars::Misc::Automation::AutoTaunt, FToggle_Left);
+				FSlider("Auto taunt chance", Vars::Misc::Automation::AutoTauntChance, 0, 100, 1, "%i%%", FSlider_Clamp);
 				FToggle("OWOBase", Vars::OWOBase::Enabled, FToggle_Left);
 				FToggle("Auto sync", Vars::OWOBase::AutoSync, FToggle_Right);
 				PushTransparent(!FGet(Vars::OWOBase::AutoSync));
@@ -1347,7 +1349,7 @@ void CMenu::MenuMisc(int iTab)
 							FSlider("Auto scope cancel time", Vars::Misc::Movement::NavBot::AutoScopeCancelTime, 1, 5, 1, "%is");
 						}
 						PopTransparent();
-						FDropdown("Preferences", Vars::Misc::Movement::NavBot::Preferences, { "Get health", "Get ammo", "Reload weapons", "Stalk enemies", "Defend objectives", "Capture objectives", "Help capture objectives", "Escape danger", "Safe capping", "Target sentries", "Auto engie", "##Divider", "Target sentries low range", "Help capture objective friend only", "Dont escape danger with intel" }, {}, FDropdown_Multi);
+						FDropdown("Preferences", Vars::Misc::Movement::NavBot::Preferences, { "Get health", "Get ammo", "Reload weapons", "Stalk enemies", "Defend objectives", "Capture objectives", "Help capture objectives", "Escape danger", "Safe capping", "Target sentries", "Auto engie", "##Divider", "Target sentries low range", "Help capture objective friend only", "Dont escape danger with intel", "Group with other bots" }, {}, FDropdown_Multi);
 						FDropdown("Blacklist", Vars::Misc::Movement::NavBot::Blacklist, { "Normal threats", "Dormant threats", "##Divider", "Players", "Stickies", "Projectiles", "Sentries" }, {}, FDropdown_Multi);
 						PushTransparent(!(FGet(Vars::Misc::Movement::NavBot::Blacklist) & Vars::Misc::Movement::NavBot::BlacklistEnum::NormalThreats) || !FGet(Vars::Misc::Movement::NavBot::Enabled) || !FGet(Vars::Misc::Movement::NavEngine::Enabled));
 						{
